@@ -497,7 +497,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
               ? 'animate-in slide-in-from-bottom-36 duration-700 ease-out opacity-100 scale-100 translate-y-0'
               : profile.theme.extraEffects?.entranceAnimation === 'flip'
               ? 'animate-in spin-in-180 duration-700 ease-out opacity-100 scale-100 translate-y-0'
-              : 'animate-in fade-in duration-500 opacity-100 scale-100 translate-y-0'
+              : 'opacity-100 scale-100 translate-y-0'
             : 'opacity-0 scale-95 translate-y-4 pointer-events-none'
         }`}
       >

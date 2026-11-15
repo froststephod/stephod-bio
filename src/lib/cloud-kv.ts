@@ -104,16 +104,11 @@ async function syncToGist(): Promise<boolean> {
   return await syncPromise;
 }
 
-export async function ensureStoreLoaded(force = false): Promise<Record<string, any>> {
-  const now = Date.now();
-  if (!isStoreLoaded) {
-    loadLocalFile();
-  }
+let isFetchingGist = false;
 
-  if (!force && isStoreLoaded && now - lastSyncTimestamp < CACHE_TTL_MS) {
-    return memoryStore;
-  }
-
+async function fetchGistBackground(): Promise<void> {
+  if (isFetchingGist) return;
+  isFetchingGist = true;
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 4000);
@@ -146,9 +141,28 @@ export async function ensureStoreLoaded(force = false): Promise<Record<string, a
     }
   } catch (err) {
     // Graceful fallback to memoryStore / local file
+  } finally {
+    isFetchingGist = false;
+  }
+}
+
+export async function ensureStoreLoaded(force = false): Promise<Record<string, any>> {
+  const now = Date.now();
+  if (!isStoreLoaded) {
+    loadLocalFile();
+    isStoreLoaded = true;
   }
 
-  isStoreLoaded = true;
+  // Fast-path: return cached memory store in 0ms, revalidate in background if needed
+  if (!force && Object.keys(memoryStore).length > 0) {
+    if (now - lastSyncTimestamp > CACHE_TTL_MS) {
+      fetchGistBackground().catch(() => {});
+    }
+    return memoryStore;
+  }
+
+  // Cold start with completely empty store: await initial fetch
+  await fetchGistBackground();
   return memoryStore;
 }
 

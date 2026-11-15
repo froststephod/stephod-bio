@@ -36,7 +36,7 @@ export default function AnimatedTextEffect({
   const hasLoading = effects.includes('loading');
 
   const [phraseIndex, setPhraseIndex] = useState(0);
-  const [displayText, setDisplayText] = useState('');
+  const [displayText, setDisplayText] = useState(phrases[0] || '');
   const [isDeleting, setIsDeleting] = useState(false);
   const [morphOpacity, setMorphOpacity] = useState(1);
   const [dots, setDots] = useState('');
