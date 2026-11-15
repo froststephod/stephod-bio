@@ -1,63 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Sparkles, Shield, User, ArrowRight, Loader2, Plus, Zap } from 'lucide-react';
-import { DEMO_DISCORD_USERS } from '@/lib/auth-constants';
+import { Shield, ArrowRight, Zap, AlertCircle } from 'lucide-react';
 
 interface Props {
   onLoginSuccess: (user: any, profile: any) => void;
 }
 
 export default function DiscordLoginScreen({ onLoginSuccess }: Props) {
-  const [loadingUser, setLoadingUser] = useState<string | null>(null);
-  const [customUsername, setCustomUsername] = useState('');
-  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [setupRequired, setSetupRequired] = useState(false);
 
-  const handleDemoLogin = async (username: string) => {
-    setLoadingUser(username);
-    try {
-      const res = await fetch('/api/auth/me', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'demo_login', userId: username }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        onLoginSuccess(data.user, data.profile);
-      } else {
-        alert(data.error || 'Login failed');
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('discord_setup_required') === 'true') {
+        setSetupRequired(true);
       }
-    } catch (e) {
-      console.error(e);
-      alert('Error during login');
-    } finally {
-      setLoadingUser(null);
     }
-  };
-
-  const handleCustomLogin = async () => {
-    if (!customUsername.trim()) return;
-    setLoadingUser('custom');
-    try {
-      const res = await fetch('/api/auth/me', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'custom_discord', customUsername: customUsername.trim() }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        onLoginSuccess(data.user, data.profile);
-      } else {
-        alert(data.error || 'Login failed');
-      }
-    } catch (e) {
-      console.error(e);
-      alert('Error during login');
-    } finally {
-      setLoadingUser(null);
-    }
-  };
+  }, []);
 
   const handleOfficialDiscordOAuth = () => {
     window.location.href = '/api/auth/discord';
@@ -114,104 +75,18 @@ export default function DiscordLoginScreen({ onLoginSuccess }: Props) {
           </button>
         </div>
 
-        {/* Divider */}
-        <div className="relative flex items-center justify-center">
-          <div className="border-t border-white/10 w-full" />
-          <span className="bg-[#0e1017] px-3 text-[10px] font-mono uppercase text-white/40 tracking-wider">
-            หรือทดสอบเข้าสู่ระบบทันที (Demo)
-          </span>
-          <div className="border-t border-white/10 w-full" />
-        </div>
-
-        {/* Instant Account Switcher for Testing */}
-        <div className="space-y-2">
-          <p className="text-[11px] text-white/50 text-center">
-            เลือกล็อกอินเป็นบัญชีตัวอย่างเพื่อทดสอบระบบคนละโปรไฟล์:
-          </p>
-
-          <div className="grid grid-cols-1 gap-2">
-            {DEMO_DISCORD_USERS.map((demo) => {
-              const isLoading = loadingUser === demo.username;
-              return (
-                <button
-                  key={demo.id}
-                  type="button"
-                  disabled={!!loadingUser}
-                  onClick={() => handleDemoLogin(demo.username)}
-                  className="w-full p-2.5 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-emerald-500/50 flex items-center justify-between transition-all group active:scale-[0.99]"
-                >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={demo.avatar}
-                      alt={demo.username}
-                      className="w-8 h-8 rounded-full border border-white/20 object-cover"
-                    />
-                    <div className="text-left">
-                      <div className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">
-                        {demo.globalName}
-                      </div>
-                      <div className="text-[10px] text-white/40 font-mono">
-                        @{demo.username} • ลิงก์: /{demo.profileUsername}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
-                    {isLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <>
-                        <span>เข้าสู่ระบบ</span>
-                        <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-                      </>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
+        {/* Warning if Discord keys not set yet */}
+        {setupRequired && (
+          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
+            <div className="space-y-1">
+              <p className="font-semibold">ยังไม่ได้ใส่ Discord Client ID & Secret</p>
+              <p className="text-[11px] text-amber-300/80">
+                ให้นำ <b>Client ID</b> และ <b>Client Secret</b> จาก Discord Developer Portal ไปใส่ใน <code>.env.local</code> หรือใน Vercel Environment Variables ครับ
+              </p>
+            </div>
           </div>
-
-          {/* Create new Friend Profile / Custom Discord */}
-          <div className="pt-2">
-            {!showCustomInput ? (
-              <button
-                type="button"
-                onClick={() => setShowCustomInput(true)}
-                className="w-full py-2 px-3 rounded-xl border border-dashed border-white/20 hover:border-cyan-400 text-xs text-white/60 hover:text-white flex items-center justify-center gap-2 transition-all font-mono"
-              >
-                <Plus className="w-3.5 h-3.5 text-cyan-400" />
-                <span>+ ทดสอบสร้างเพื่อนใหม่ (เช่น mew, bank)</span>
-              </button>
-            ) : (
-              <div className="p-3 rounded-2xl bg-black/50 border border-white/15 space-y-2">
-                <label className="block text-[11px] text-white/70">
-                  พิมพ์ชื่อผู้ใช้ Discord ของเพื่อน:
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={customUsername}
-                    onChange={(e) => setCustomUsername(e.target.value)}
-                    placeholder="e.g. mew, bank, player1"
-                    className="flex-1 bg-black/70 border border-white/15 rounded-xl px-3 py-1.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-cyan-400 font-mono"
-                  />
-                  <button
-                    type="button"
-                    disabled={!customUsername.trim() || !!loadingUser}
-                    onClick={handleCustomLogin}
-                    className="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-black text-xs font-bold transition-all flex items-center gap-1"
-                  >
-                    {loadingUser === 'custom' ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <span>สร้าง & เข้าใช้</span>
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        )}
 
         {/* Security / Feature Guarantee */}
         <div className="pt-2 border-t border-white/10 flex items-center justify-center gap-4 text-[10px] text-white/40">
