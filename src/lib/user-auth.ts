@@ -1,7 +1,7 @@
 import { scryptSync, randomBytes, timingSafeEqual, createHmac } from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { kvRead, kvSet } from './cloud-kv';
+import { kvRead, kvSet, ensureStoreLoaded } from './cloud-kv';
 import { addToUserIndex, getProfileStateAsync, saveProfileAsync } from './storage';
 import { ProfileData, AuthUser } from '@/types/profile';
 
@@ -110,6 +110,32 @@ export async function getUserAccount(username: string): Promise<UserAccount | nu
   return null;
 }
 
+export async function findUserAccount(identifier: string): Promise<UserAccount | null> {
+  const clean = identifier.toLowerCase().trim();
+  // 1. Direct username lookup
+  const byUser = await getUserAccount(clean);
+  if (byUser) return byUser;
+
+  // 2. DisplayName fallback lookup (e.g. user entered "Valen" instead of "zxf2k")
+  try {
+    const store = await ensureStoreLoaded();
+    for (const key of Object.keys(store)) {
+      if (key.startsWith('usr_acc_')) {
+        const acc = store[key] as UserAccount;
+        if (
+          acc &&
+          acc.displayName &&
+          acc.displayName.toLowerCase().trim() === clean
+        ) {
+          return acc;
+        }
+      }
+    }
+  } catch {}
+
+  return null;
+}
+
 export function createDefaultProfileForUser(username: string, displayName: string): ProfileData {
   return {
     username,
@@ -191,7 +217,7 @@ export async function registerUser(
   // Check if account already exists
   const existingAcc = await getUserAccount(username);
   if (existingAcc) {
-    return { ok: false, error: 'ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น' };
+    return { ok: false, error: 'ชื่อผู้ใช้นี้ถูกใช้งานแล้ว หากเป็นบัญชีของคุณสามารถเข้าสู่ระบบได้ทันที' };
   }
 
   // Check if profile already exists in Cloud KV or memory
@@ -250,7 +276,7 @@ export async function loginUser(
     return { ok: false, error: 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน' };
   }
 
-  const account = await getUserAccount(username);
+  const account = await findUserAccount(username);
   if (!account) {
     return { ok: false, error: 'ไม่พบบัญชีผู้ใช้นี้ในระบบ' };
   }
@@ -260,11 +286,12 @@ export async function loginUser(
     return { ok: false, error: 'รหัสผ่านไม่ถูกต้อง' };
   }
 
-  // Get user profile
-  const state = await getProfileStateAsync(username);
+  // Get user profile using the account's registered username
+  const actualUsername = account.username;
+  const state = await getProfileStateAsync(actualUsername);
   let profile = state.profile;
   if (!profile || state.deleted) {
-    profile = createDefaultProfileForUser(username, account.displayName);
+    profile = createDefaultProfileForUser(actualUsername, account.displayName);
     await saveProfileAsync(profile);
   }
 
@@ -276,10 +303,10 @@ export async function loginUser(
   }
 
   const authUser: AuthUser = {
-    id: username,
-    username,
-    displayName: account.displayName || username,
-    profileUsername: username,
+    id: actualUsername,
+    username: actualUsername,
+    displayName: account.displayName || actualUsername,
+    profileUsername: actualUsername,
   };
 
   return { ok: true, user: authUser, profile };
