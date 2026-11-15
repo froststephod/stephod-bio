@@ -5,10 +5,12 @@ import {
   DEFAULT_PROFILES,
   deleteProfileFromCloud,
   getAllProfiles,
+  getProfileAsync,
   getProfileStateAsync,
   readUserIndex,
   saveProfileAsync,
 } from './storage';
+import { getAllAccountUsernames, getUserAccount } from './user-auth';
 import type { Badge, ProfileData } from '@/types/profile';
 
 // ---------------------------------------------------------------------------
@@ -376,8 +378,12 @@ export interface UserRow {
 
 export async function listUsers(): Promise<{ users: UserRow[]; indexComplete: boolean }> {
   const idx = await readUserIndex();
+  const authNames = getAllAccountUsernames();
+  const inMemoryNames = Object.keys(getAllProfiles());
+  const defaultNames = Object.keys(DEFAULT_PROFILES);
+
   const names = Array.from(
-    new Set([...idx.names, ...Object.keys(DEFAULT_PROFILES), ...Object.keys(getAllProfiles())])
+    new Set([...idx.names, ...authNames, ...inMemoryNames, ...defaultNames])
   );
 
   const rows: UserRow[] = [];
@@ -392,23 +398,24 @@ export async function listUsers(): Promise<{ users: UserRow[]; indexComplete: bo
           return {
             username: name,
             displayName: String(s.d || name),
-            owner: String(s.o || ''),
+            owner: String(s.o || name),
             views: Number(s.w) || 0,
             likes: Number(s.k) || 0,
             banned: s.b === 1,
             updatedAt: String(s.u || ''),
           };
         }
-        const p = getAllProfiles()[name] || DEFAULT_PROFILES[name];
-        if (!p) return null;
+        const p = (await getProfileAsync(name)) || getAllProfiles()[name] || DEFAULT_PROFILES[name];
+        const acc = await getUserAccount(name);
+        if (!p && !acc) return null;
         return {
           username: name,
-          displayName: p.displayName,
-          owner: p.ownerDiscordTag || '',
-          views: p.views || 0,
-          likes: p.likes || 0,
-          banned: !!p.banned,
-          updatedAt: p.updatedAt,
+          displayName: p?.displayName || acc?.displayName || name,
+          owner: p?.ownerDiscordTag || acc?.username || name,
+          views: p?.views || 0,
+          likes: p?.likes || 0,
+          banned: !!p?.banned,
+          updatedAt: p?.updatedAt || acc?.createdAt || new Date().toISOString(),
         };
       })
     );

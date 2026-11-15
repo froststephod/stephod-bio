@@ -44,6 +44,11 @@ function persistAccounts(): void {
   }
 }
 
+export function getAllAccountUsernames(): string[] {
+  initAccounts();
+  return Object.keys(inMemoryAccounts);
+}
+
 function hmac(data: string): string {
   return createHmac('sha256', USER_SECRET).update(data).digest('base64url');
 }
