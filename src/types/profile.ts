@@ -46,7 +46,7 @@ export interface ThemeConfig {
 
   // Appearance & Layout Features (yura.lol inspired)
   layout?: 'center' | 'left' | 'compact';
-  cardStyle?: 'glassmorphic' | 'frosted-square' | 'frosted-soft' | 'neon' | 'cyber' | 'transparent';
+  cardStyle?: 'glassmorphic' | 'crystal-glass' | 'frosted-square' | 'frosted-soft' | 'neon' | 'cyber' | 'transparent';
   cornerShape?: 'rounded' | 'sharp' | 'extra-rounded' | 'capsule' | 'leaf';
   nameColor?: string;
   textColor?: string;

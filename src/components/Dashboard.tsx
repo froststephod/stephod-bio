@@ -1200,10 +1200,11 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                     นี่คือรูปลักษณ์ภายนอกของโปรไฟล์คุณ เลือกว่าจะแต่งโทนไหนและรูปร่างหน้าต่างอย่างไร
                   </p>
 
-                  {/* 6 Card Styles */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {/* 7 Card Styles */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
                     {[
                       { id: 'glassmorphic', name: 'กลาสมอร์ฟิก', desc: 'กระจกฝ้าหรูหรา' },
+                      { id: 'crystal-glass', name: 'แบบแก้ว', desc: 'กระจกแก้วใสประกาย 3D' },
                       { id: 'frosted-square', name: 'ฟรอสเต็ด สแควร์', desc: 'กระจกเข้มคมชัด' },
                       { id: 'frosted-soft', name: 'ฟรอสเต็ด ซอฟต์', desc: 'กระจกนุ่มนวล' },
                       { id: 'neon', name: 'ขอบนีออน', desc: 'เรืองแสงสะดุดตา' },

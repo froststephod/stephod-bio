@@ -408,6 +408,16 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
       boxShadow: 'none',
       background: 'transparent',
     };
+  } else if (cardStyle === 'crystal-glass') {
+    cardBorderClass = 'border border-white/30';
+    cardBgColor = `rgba(255, 255, 255, ${Math.min(Math.max(opacityVal * 0.18, 0.04), 0.12)})`;
+    extraCardStyles = {
+      backdropFilter: 'blur(28px) saturate(190%)',
+      WebkitBackdropFilter: 'blur(28px) saturate(190%)',
+      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.03) 40%, rgba(255, 255, 255, 0.06) 100%)',
+      boxShadow: '0 25px 60px rgba(0, 0, 0, 0.65), inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.6), inset 0 0 25px 0 rgba(255, 255, 255, 0.08)',
+      borderColor: 'rgba(255, 255, 255, 0.28)',
+    };
   } else if (cardStyle === 'frosted-square') {
     cardBorderClass = 'border border-white/20 shadow-2xl';
     cardBgColor = `rgba(10, 10, 14, ${Math.max(opacityVal, 0.65)})`;
@@ -523,11 +533,24 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
             ...tiltStyle,
             boxShadow: isTransparent
               ? 'none'
+              : extraCardStyles.boxShadow
+              ? extraCardStyles.boxShadow
               : profile.theme.glowEffect && cardStyle !== 'neon'
               ? `0 0 35px ${accent}25`
-              : extraCardStyles.boxShadow,
+              : undefined,
           }}
         >
+          {/* Glass Specular Glare / Reflection for crystal-glass */}
+          {cardStyle === 'crystal-glass' && (
+            <div
+              className="absolute -top-[40%] -left-[40%] w-[180%] h-[180%] pointer-events-none select-none z-0"
+              style={{
+                background: 'linear-gradient(125deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 25%, transparent 55%)',
+                transform: 'rotate(-12deg)',
+              }}
+            />
+          )}
+
           {/* Border Beam Laser Animation */}
           {profile.theme.extraEffects?.borderBeam && (
             <div className="border-beam-wrapper">
