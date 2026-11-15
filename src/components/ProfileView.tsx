@@ -111,8 +111,24 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
     };
   }, [profile.username, isPreview]);
 
-  const isClickToEnterEnabled = profile.theme.clickToEnter !== false; // defaults to true
+  const isClickToEnterEnabled = profile.theme?.clickToEnter !== false; // defaults to true
   const [hasEntered, setHasEntered] = useState(isPreview || !isClickToEnterEnabled);
+
+  // If clickToEnter is disabled or becomes disabled, automatically reveal profile card
+  useEffect(() => {
+    if (!isClickToEnterEnabled) {
+      setHasEntered(true);
+    }
+  }, [isClickToEnterEnabled]);
+
+  // Global keydown listener to enter
+  useEffect(() => {
+    const handleGlobalKey = () => {
+      setHasEntered(true);
+    };
+    window.addEventListener('keydown', handleGlobalKey);
+    return () => window.removeEventListener('keydown', handleGlobalKey);
+  }, []);
   const [likes, setLikes] = useState(profile.likes || 0);
   const [hasLiked, setHasLiked] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -420,6 +436,9 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
 
   return (
     <div
+      onClick={() => {
+        if (!hasEntered) setHasEntered(true);
+      }}
       className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 overflow-hidden selection:bg-emerald-500/30 selection:text-white"
       style={{
         cursor: profile.theme.customCursor ? 'crosshair' : 'default',
@@ -443,7 +462,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
       {!hasEntered && isClickToEnterEnabled && (
         <div
           onClick={handleEnter}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl cursor-pointer transition-opacity duration-700 animate-in fade-in"
+          className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl cursor-pointer transition-opacity duration-700 animate-in fade-in"
         >
           <div className="relative group text-center p-8">
             <div
@@ -469,7 +488,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
       {/* Main Profile Card Container */}
       <div
         className={`relative w-full ${maxCardWidth} z-10 transition-all ${
-          hasEntered
+          hasEntered || !isClickToEnterEnabled
             ? profile.theme.extraEffects?.entranceAnimation === 'zoom'
               ? 'animate-in zoom-in-75 duration-700 ease-out opacity-100 scale-100 translate-y-0'
               : profile.theme.extraEffects?.entranceAnimation === 'drop'
@@ -479,7 +498,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
               : profile.theme.extraEffects?.entranceAnimation === 'flip'
               ? 'animate-in spin-in-180 duration-700 ease-out opacity-100 scale-100 translate-y-0'
               : 'animate-in fade-in duration-500 opacity-100 scale-100 translate-y-0'
-            : 'opacity-0 scale-95 translate-y-4'
+            : 'opacity-0 scale-95 translate-y-4 pointer-events-none'
         }`}
       >
         {/* Ambient Glow behind card (hidden when transparent so it's truly invisible/luminous) */}
