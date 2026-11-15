@@ -68,31 +68,25 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
     };
     window.addEventListener('storage', handleStorage);
 
-    // C) Rapid background sync & re-fetch on focus
+    // C) Background sync: server is the single source of truth.
+    // Only update state when the content really changed (prevents flip-flopping).
+    const sig = (p: ProfileData) => JSON.stringify({ ...p, views: 0, likes: 0, updatedAt: '' });
     const syncLatest = async () => {
       try {
-        const raw = localStorage.getItem('stephod_profile_' + profile.username.toLowerCase());
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed && parsed.username) {
-            setProfile(parsed);
-          }
-        }
-
         const res = await fetch(`/api/profiles/${encodeURIComponent(profile.username)}?t=${Date.now()}`, {
           cache: 'no-store',
         });
         if (res.ok) {
           const data = await res.json();
           if (data && data.success && data.profile) {
-            setProfile(data.profile);
+            setProfile((prev) => (sig(prev) === sig(data.profile) ? prev : data.profile));
           }
         }
       } catch {}
     };
 
     window.addEventListener('focus', syncLatest);
-    const interval = setInterval(syncLatest, 1500);
+    const interval = setInterval(syncLatest, 5000);
 
     return () => {
       if (bc) {
@@ -110,9 +104,10 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
   const [hasLiked, setHasLiked] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const titlesKey = (profile.titles || []).join('\u0001');
   const validTitles = React.useMemo(() => {
-    return (profile.titles || []).map((t) => t.trim()).filter(Boolean);
-  }, [profile.titles]);
+    return titlesKey.split('\u0001').map((t) => t.trim()).filter(Boolean);
+  }, [titlesKey]);
 
   const [currentTitleIndex, setCurrentTitleIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState(
