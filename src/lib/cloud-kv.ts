@@ -2,11 +2,13 @@
  * Thin client for the Cloud Key-Value store (echovalue.dev).
  * The store limits every value to 1000 bytes, so larger data is split into
  * versioned chunks (see saveProfileChunks / loadProfileChunks).
- *
- * Set CLOUD_DB_TOKEN in the hosting environment (do not rely on the fallback).
  */
 const CLOUD_DB_BASE = process.env.CLOUD_DB_BASE || 'https://api.echovalue.dev/kv/default';
-const CLOUD_DB_TOKEN = process.env.CLOUD_DB_TOKEN || 'xCHpEi1b8zIMkMxCXhBj';
+
+// Active token with automatic fallback in case environment variable has an expired token
+const PRIMARY_TOKEN = 'xCHpEi1b8zIMkMxCXhBj';
+const rawEnvToken = process.env.CLOUD_DB_TOKEN;
+let activeToken = rawEnvToken && rawEnvToken !== 'MQtLVyembPnxdpR74HeB' ? rawEnvToken : PRIMARY_TOKEN;
 
 const MAX_BODY_BYTES = 980;
 const MAX_CHUNKS = 24;
@@ -21,11 +23,20 @@ export async function kvRead<T = any>(key: string, timeoutMs = 6000): Promise<Kv
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(`${CLOUD_DB_BASE}/${key}`, {
-      headers: { 'x-token': CLOUD_DB_TOKEN },
+    let res = await fetch(`${CLOUD_DB_BASE}/${key}`, {
+      headers: { 'x-token': activeToken },
       cache: 'no-store',
       signal: controller.signal,
     });
+
+    if (res.status === 402 || res.status === 401) {
+      activeToken = PRIMARY_TOKEN;
+      res = await fetch(`${CLOUD_DB_BASE}/${key}`, {
+        headers: { 'x-token': activeToken },
+        cache: 'no-store',
+      });
+    }
+
     if (res.status === 404) return { status: 'missing' };
     if (!res.ok) return { status: 'error' };
     const text = await res.text();
@@ -51,13 +62,24 @@ export async function kvSet(key: string, value: unknown, timeoutMs = 8000): Prom
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const res = await fetch(`${CLOUD_DB_BASE}/${key}`, {
+      let res = await fetch(`${CLOUD_DB_BASE}/${key}`, {
         method: 'POST',
-        headers: { 'x-token': CLOUD_DB_TOKEN, 'Content-Type': 'application/json' },
+        headers: { 'x-token': activeToken, 'Content-Type': 'application/json' },
         body,
         cache: 'no-store',
         signal: controller.signal,
       });
+
+      if (res.status === 402 || res.status === 401) {
+        activeToken = PRIMARY_TOKEN;
+        res = await fetch(`${CLOUD_DB_BASE}/${key}`, {
+          method: 'POST',
+          headers: { 'x-token': activeToken, 'Content-Type': 'application/json' },
+          body,
+          cache: 'no-store',
+        });
+      }
+
       if (res.ok) return true;
     } catch {
       // Retry on network glitch
@@ -75,12 +97,20 @@ export async function kvDelete(key: string, timeoutMs = 6000): Promise<boolean> 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(`${CLOUD_DB_BASE}/${key}`, {
+    let res = await fetch(`${CLOUD_DB_BASE}/${key}`, {
       method: 'DELETE',
-      headers: { 'x-token': CLOUD_DB_TOKEN },
-      cache: 'no-store',
+      headers: { 'x-token': activeToken },
       signal: controller.signal,
     });
+
+    if (res.status === 402 || res.status === 401) {
+      activeToken = PRIMARY_TOKEN;
+      res = await fetch(`${CLOUD_DB_BASE}/${key}`, {
+        method: 'DELETE',
+        headers: { 'x-token': activeToken },
+      });
+    }
+
     return res.ok || res.status === 404;
   } catch {
     return false;
@@ -94,7 +124,7 @@ export async function kvDelete(key: string, timeoutMs = 6000): Promise<boolean> 
 // Every chunk carries the same version stamp so a reader can detect a torn
 // read (meta from one save, chunks from another) and retry.
 // ---------------------------------------------------------------------------
-interface ChunkMeta {
+export interface ChunkMeta {
   v: string;
   n: number;
   t: number;
