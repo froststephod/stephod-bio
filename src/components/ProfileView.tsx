@@ -216,11 +216,13 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
       (profile.theme.typewriterSpeed && profile.theme.typewriterSpeed < 70
         ? profile.theme.typewriterSpeed
         : 35);
-    const typingSpeed = baseSpeed;
-    const deleteSpeed = Math.max(10, Math.floor(baseSpeed * 0.45));
-    const pauseTime =
-      profile.theme.extraEffects?.pauseDuration ||
-      (baseSpeed <= 22 ? 300 : baseSpeed <= 40 ? 550 : 900);
+    // Rotating titles use a calmer pace than name/bio effects
+    const typingSpeed = Math.max(90, Math.round(baseSpeed * 2.6));
+    const deleteSpeed = Math.max(45, Math.round(baseSpeed * 1.3));
+    const pauseTime = Math.max(
+      1600,
+      (profile.theme.extraEffects?.pauseDuration || 500) * 3
+    );
 
     let timeoutId: NodeJS.Timeout;
 
@@ -243,7 +245,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
         timeoutId = setTimeout(() => {
           setIsDeleting(false);
           setCurrentTitleIndex((prev) => (prev + 1) % validTitles.length);
-        }, 120);
+        }, 350);
       }
     }
 
