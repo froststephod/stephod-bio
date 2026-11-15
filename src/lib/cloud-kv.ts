@@ -7,8 +7,7 @@ const CLOUD_DB_BASE = 'https://api.echovalue.dev/kv/default';
 
 // Active token with automatic fallback in case environment variable has an expired token
 const PRIMARY_TOKEN = 'xCHpEi1b8zIMkMxCXhBj';
-const rawEnvToken = process.env.CLOUD_DB_TOKEN;
-let activeToken = rawEnvToken && rawEnvToken !== 'MQtLVyembPnxdpR74HeB' ? rawEnvToken : PRIMARY_TOKEN;
+let activeToken = PRIMARY_TOKEN;
 
 const MAX_BODY_BYTES = 980;
 const MAX_CHUNKS = 24;
