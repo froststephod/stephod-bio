@@ -109,9 +109,21 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
   const [likes, setLikes] = useState(profile.likes || 0);
   const [hasLiked, setHasLiked] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const validTitles = React.useMemo(() => {
+    return (profile.titles || []).map((t) => t.trim()).filter(Boolean);
+  }, [profile.titles]);
+
   const [currentTitleIndex, setCurrentTitleIndex] = useState(0);
-  const [displayedText, setDisplayedText] = useState('');
+  const [displayedText, setDisplayedText] = useState(
+    validTitles.length > 0 ? validTitles[0] : ''
+  );
   const [isDeleting, setIsDeleting] = useState(false);
+  const [bannerFailed, setBannerFailed] = useState(false);
+
+  useEffect(() => {
+    setBannerFailed(false);
+  }, [profile.bannerUrl]);
 
   // Real-time presence & live views
   const [views, setViews] = useState(profile.views || 0);
@@ -191,11 +203,14 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
     return () => clearInterval(interval);
   }, [profile.username, isPreview]);
 
-  // Typewriter effect for titles (Fast, crisp & snappy transition)
+  // Typewriter effect for titles (Robust & race-condition free)
   useEffect(() => {
-    if (!profile.titles || profile.titles.length === 0) return;
+    if (validTitles.length === 0) {
+      setDisplayedText('');
+      return;
+    }
 
-    const currentTitle = profile.titles[currentTitleIndex % profile.titles.length];
+    const currentTitle = validTitles[currentTitleIndex % validTitles.length];
     const baseSpeed =
       profile.theme.extraEffects?.typewriterSpeed ||
       (profile.theme.typewriterSpeed && profile.theme.typewriterSpeed < 70
@@ -207,29 +222,37 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
       profile.theme.extraEffects?.pauseDuration ||
       (baseSpeed <= 22 ? 300 : baseSpeed <= 40 ? 550 : 900);
 
-    const speed = isDeleting ? deleteSpeed : typingSpeed;
+    let timeoutId: NodeJS.Timeout;
 
-    const timer = setTimeout(() => {
-      if (!isDeleting) {
-        setDisplayedText(currentTitle.substring(0, displayedText.length + 1));
-        if (displayedText.length + 1 >= currentTitle.length) {
-          setTimeout(() => setIsDeleting(true), pauseTime); // pause at full word (snappy 550ms)
-        }
+    if (!isDeleting) {
+      if (displayedText.length < currentTitle.length) {
+        timeoutId = setTimeout(() => {
+          setDisplayedText(currentTitle.substring(0, displayedText.length + 1));
+        }, typingSpeed);
       } else {
-        setDisplayedText(currentTitle.substring(0, displayedText.length - 1));
-        if (displayedText.length === 0) {
-          setIsDeleting(false);
-          setCurrentTitleIndex((prev) => (prev + 1) % profile.titles.length);
-        }
+        timeoutId = setTimeout(() => {
+          setIsDeleting(true);
+        }, pauseTime);
       }
-    }, speed);
+    } else {
+      if (displayedText.length > 0) {
+        timeoutId = setTimeout(() => {
+          setDisplayedText(currentTitle.substring(0, displayedText.length - 1));
+        }, deleteSpeed);
+      } else {
+        timeoutId = setTimeout(() => {
+          setIsDeleting(false);
+          setCurrentTitleIndex((prev) => (prev + 1) % validTitles.length);
+        }, 120);
+      }
+    }
 
-    return () => clearTimeout(timer);
+    return () => clearTimeout(timeoutId);
   }, [
     displayedText,
     isDeleting,
     currentTitleIndex,
-    profile.titles,
+    validTitles,
     profile.theme.typewriterSpeed,
     profile.theme.extraEffects?.typewriterSpeed,
     profile.theme.extraEffects?.pauseDuration,
@@ -504,14 +527,24 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
             </>
           )}
 
-          {/* Top Banner (Optional) */}
-          {profile.bannerUrl && layout !== 'compact' && (
+          {/* Top Banner with fallback & error handling */}
+          {layout !== 'compact' && (
             <div className={`w-full h-28 relative overflow-hidden ${isTransparent ? 'rounded-2xl mb-2' : ''}`}>
-              <img
-                src={profile.bannerUrl}
-                alt="Profile Banner"
-                className="w-full h-full object-cover filter brightness-[0.7]"
-              />
+              {profile.bannerUrl && !bannerFailed ? (
+                <img
+                  src={profile.bannerUrl}
+                  alt=""
+                  onError={() => setBannerFailed(true)}
+                  className="w-full h-full object-cover filter brightness-[0.7]"
+                />
+              ) : (
+                <div
+                  className="w-full h-full"
+                  style={{
+                    background: `linear-gradient(135deg, ${accent}30 0%, ${glow}18 50%, rgba(18,19,26,0.95) 100%)`,
+                  }}
+                />
+              )}
               {!isTransparent && (
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#12131a]" />
               )}
@@ -520,7 +553,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
 
           {/* 1. LAYOUT: CENTER (Standard Classic Aesthetic) */}
           {layout === 'center' && (
-            <div className={`p-6 sm:p-7 text-center ${profile.bannerUrl && !isTransparent ? '-mt-14' : 'pt-7'}`}>
+            <div className={`p-6 sm:p-7 text-center ${!isTransparent ? '-mt-14' : 'pt-7'}`}>
               {/* Avatar with Discord Decoration Frame */}
               <div className="relative inline-block mx-auto mb-3">
                 <AvatarWithDecoration
@@ -579,7 +612,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
               )}
 
               {/* Typewriter Rotating Title */}
-              {profile.titles && profile.titles.length > 0 && (
+              {validTitles.length > 0 && (
                 <div className="h-6 mt-2 flex items-center justify-center text-xs sm:text-sm font-medium tracking-wide">
                   <span
                     style={{
@@ -587,7 +620,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                       textShadow: isTransparent ? '0 1px 8px rgba(0,0,0,0.9)' : undefined,
                     }}
                   >
-                    {displayedText}
+                    {displayedText || '\u00A0'}
                   </span>
                   <span
                     className="w-1.5 h-3.5 ml-0.5 inline-block animate-pulse"
@@ -745,7 +778,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
 
           {/* 2. LAYOUT: LEFT (Split / Horizontal 2-Column HUD Layout) */}
           {layout === 'left' && (
-            <div className={`p-6 sm:p-7 ${profile.bannerUrl ? '-mt-10' : 'pt-6'}`}>
+            <div className={`p-6 sm:p-7 ${!isTransparent ? '-mt-10' : 'pt-6'}`}>
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                 {/* Left Side: Avatar, Name, Handle, Badges, Discord */}
                 <div className="sm:w-[240px] flex-shrink-0 flex flex-col items-center sm:items-start text-center sm:text-left">
@@ -844,7 +877,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                 {/* Right Side: Titles, Bio, Spotify, Social Links */}
                 <div className="flex-1 w-full flex flex-col justify-center text-center sm:text-left sm:pl-6 sm:border-l border-white/10 pt-4 sm:pt-0">
                   {/* Typewriter Rotating Title */}
-                  {profile.titles && profile.titles.length > 0 && (
+                  {validTitles.length > 0 && (
                     <div className="h-6 flex items-center justify-center sm:justify-start text-xs sm:text-sm font-medium tracking-wide">
                       <span
                         style={{
@@ -852,7 +885,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                           textShadow: isTransparent ? '0 1px 8px rgba(0,0,0,0.9)' : undefined,
                         }}
                       >
-                        {displayedText}
+                        {displayedText || '\u00A0'}
                       </span>
                       <span
                         className="w-1.5 h-3.5 ml-0.5 inline-block animate-pulse"
@@ -1001,7 +1034,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                   </div>
 
                   {/* Titles */}
-                  {profile.titles && profile.titles.length > 0 && (
+                  {validTitles.length > 0 && (
                     <div
                       className="text-xs font-medium truncate mt-0.5"
                       style={{
@@ -1009,7 +1042,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                         textShadow: isTransparent ? '0 1px 8px rgba(0,0,0,0.9)' : undefined,
                       }}
                     >
-                      {displayedText}
+                      {displayedText || '\u00A0'}
                     </div>
                   )}
 

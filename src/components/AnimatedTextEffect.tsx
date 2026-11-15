@@ -230,7 +230,7 @@ export default function AnimatedTextEffect({
       <span>{displayText}</span>
       {hasTypewriter && (
         <span
-          className="w-2 h-[1em] ml-1 inline-block align-middle animate-pulse bg-current rounded-[1px] shadow-[0_0_8px_currentColor]"
+          className="w-1.5 h-[0.85em] ml-0.5 inline-block align-middle animate-pulse bg-current opacity-85 rounded-[1px]"
         />
       )}
       {hasLoading && <span className="font-mono text-cyan-400">{dots}</span>}

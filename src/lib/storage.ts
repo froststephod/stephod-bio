@@ -9,16 +9,14 @@ export const DEFAULT_PROFILES: Record<string, ProfileData> = {
   zrx4r: {
     username: 'zrx4r',
     displayName: 'Valen',
-    avatarUrl:
-      'https://media.discordapp.net/attachments/1248927528694059123/1558428669485121639/anime-boy-blue-hair-aesthetic-pfp-43_online-video-cutter.com.gif?ex=6af9d868&is=6af886e8&hm=bfa8a3680e6c556b64d9fb84cf423c92df718361fb5591eb10a2ca575ad8d4f4',
+    avatarUrl: '/avatars/zrx4r.png',
     avatarDecoration: {
       url: 'https://cdn.discordapp.com/avatar-decoration-presets/a_c3c09bd122898be35093d0d59850f627.png?size=240&passthrough=true',
       name: 'Soul Leaving Body',
       hue: 0,
       shape: 'circle',
     },
-    bannerUrl:
-      'https://media.discordapp.net/attachments/1248927528694059121/1562821205976793691/a642950754555de0eadee9dccd258af8_online-video-cutter.com.gif?ex=6af9b4ac&is=6af8632c&hm=56c9b5d4f27894f6bb3ed1092b6f701cfcfa016beccc81a387d52038097f66e5',
+    bannerUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
     bio: 'Developer & Gamer',
     occupation: 'STEPHOAD',
     titles: ['Gaming Enthusiast', 'Cyber Realm', 'Always Online'],

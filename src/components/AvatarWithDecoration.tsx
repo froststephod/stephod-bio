@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AvatarDecoration } from '@/types/profile';
 
 interface Props {
@@ -11,6 +11,8 @@ interface Props {
   accentColor?: string;
 }
 
+const DEFAULT_AVATAR = '/avatars/zrx4r.png';
+
 export default function AvatarWithDecoration({
   avatarUrl,
   decoration,
@@ -18,6 +20,21 @@ export default function AvatarWithDecoration({
   className = '',
   accentColor = '#a855f7',
 }: Props) {
+  const [imgSrc, setImgSrc] = useState(avatarUrl || DEFAULT_AVATAR);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setImgSrc(avatarUrl || DEFAULT_AVATAR);
+    setHasError(false);
+  }, [avatarUrl]);
+
+  const handleImgError = () => {
+    if (!hasError) {
+      setHasError(true);
+      setImgSrc(DEFAULT_AVATAR);
+    }
+  };
+
   const shape = decoration?.shape || 'circle';
   const decorationUrl = decoration?.url;
   const type = decoration?.type || (decorationUrl ? 'discord-cdn' : 'none');
@@ -42,12 +59,13 @@ export default function AvatarWithDecoration({
     <div className={`relative inline-block ${className}`}>
       {/* Avatar Container */}
       <div
-        className={`relative ${sizeClasses[size]} ${currentShapeClass} transition-transform duration-300 hover:scale-105 overflow-hidden`}
+        className={`relative ${sizeClasses[size]} ${currentShapeClass} transition-transform duration-300 hover:scale-105 overflow-hidden bg-neutral-900`}
       >
         <img
-          src={avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'}
-          alt="Avatar"
-          className={`w-full h-full object-cover ${currentShapeClass} bg-neutral-900`}
+          src={imgSrc}
+          alt=""
+          onError={handleImgError}
+          className={`w-full h-full object-cover ${currentShapeClass}`}
         />
       </div>
 
@@ -55,7 +73,7 @@ export default function AvatarWithDecoration({
       {decorationUrl && type !== 'none' && (
         <img
           src={decorationUrl}
-          alt={decoration?.name || 'Discord Avatar Decoration'}
+          alt=""
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[124%] h-[124%] max-w-none pointer-events-none z-10 object-contain select-none"
           style={{
             filter: hue > 0 ? `hue-rotate(${hue}deg)` : undefined,
