@@ -548,7 +548,7 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
                   <span>เลือกเอฟเฟกต์ชื่อ</span>
                 </div>
                 <p className="text-xs text-white/50">
-                  เลือกได้สูงสุด 3 เอฟเฟกต์สำหรับชื่อ (ใช้งานได้ทุกอัน)
+                  เลือกได้สูงสุด 3 เอฟเฟกต์สำหรับชื่อ (ปลดล็อกฟรี 100% ทุกเอฟเฟกต์)
                 </p>
               </div>
               <button
@@ -560,11 +560,30 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
               </button>
             </div>
 
-            {/* Grid of 28 Name Effects (Scrollable) */}
+            {/* Grid of 34 Name Effects (Scrollable) */}
             <div className="flex-1 overflow-y-auto pr-1">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {NAME_EFFECTS_LIST.map((eff) => {
                   const isSelected = tempNameEffects.includes(eff.id);
+                  let previewClass = '';
+                  if (eff.id === 'rainbow') previewClass = 'effect-rainbow';
+                  else if (eff.id === 'shimmer') previewClass = 'effect-shimmer';
+                  else if (eff.id === 'shine') previewClass = 'effect-shine';
+                  else if (eff.id === 'glow') previewClass = 'effect-glow';
+                  else if (eff.id === 'shake') previewClass = 'effect-shake';
+                  else if (eff.id === 'glitch') previewClass = 'effect-glitch';
+                  else if (eff.id === 'flames') previewClass = 'effect-flames';
+                  else if (eff.id === 'lightning') previewClass = 'effect-lightning';
+                  else if (eff.id === 'flicker') previewClass = 'effect-flicker';
+                  else if (eff.id === 'flip') previewClass = 'effect-flip';
+                  else if (eff.id === 'fuzzy') previewClass = 'effect-fuzzy';
+                  else if (eff.id === 'wave') previewClass = 'effect-wave';
+                  else if (eff.id === 'bounce') previewClass = 'effect-bounce';
+                  else if (eff.id === 'pulse') previewClass = 'effect-pulse';
+                  else if (eff.id === 'gold') previewClass = 'effect-gold';
+                  else if (eff.id === 'neon-cyan') previewClass = 'effect-neon-cyan';
+                  else if (eff.id === 'aura') previewClass = 'effect-aura';
+
                   return (
                     <button
                       key={eff.id}
@@ -585,14 +604,14 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
                         <span className="absolute top-2 left-2 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
                       )}
                       <div
-                        className={`text-xs font-bold tracking-wide transition-colors ${
+                        className={`text-xs font-bold tracking-wide transition-colors ${previewClass} ${
                           isSelected ? 'text-emerald-300 font-extrabold' : 'text-white/90 group-hover:text-white'
                         }`}
                       >
                         {eff.id === 'typewriter' ? (
                           <span className="inline-flex items-center">
-                            <span>Typewriter</span>
-                            <span className="w-2 h-3.5 ml-1 inline-block bg-current animate-pulse rounded-[1px] shadow-[0_0_6px_currentColor]" />
+                            <span>Type</span>
+                            <span className="w-1.5 h-3.5 ml-0.5 inline-block bg-current animate-pulse rounded-[1px] shadow-[0_0_6px_currentColor]" />
                           </span>
                         ) : (
                           eff.name
@@ -606,21 +625,30 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
             </div>
 
             {/* Modal Footer */}
-            <div className="pt-3 border-t border-white/10 flex items-center justify-end gap-2">
+            <div className="pt-3 border-t border-white/10 flex items-center justify-between">
               <button
                 type="button"
-                onClick={() => setNameModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs text-white/60 hover:text-white hover:bg-white/5 cursor-pointer"
+                onClick={() => setTempNameEffects([])}
+                className="px-4 py-2 rounded-xl text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer"
               >
-                ยกเลิก
+                ลบทั้งหมด
               </button>
-              <button
-                type="button"
-                onClick={confirmNameEffects}
-                className="px-6 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition-all shadow-lg shadow-emerald-500/25 cursor-pointer"
-              >
-                ยืนยัน ({tempNameEffects.length}/3)
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setNameModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs text-white/60 hover:text-white hover:bg-white/5 cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmNameEffects}
+                  className="px-6 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition-all shadow-lg shadow-emerald-500/25 cursor-pointer"
+                >
+                  ยืนยัน ({tempNameEffects.length}/3)
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -650,11 +678,27 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
               </button>
             </div>
 
-            {/* Grid of 12 Bio Effects */}
+            {/* Grid of 18 Bio Effects */}
             <div className="flex-1 overflow-y-auto pr-1">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {BIO_EFFECTS_LIST.map((eff) => {
                   const isSelected = tempBioEffects.includes(eff.id);
+                  let previewClass = '';
+                  if (eff.id === 'rainbow') previewClass = 'effect-rainbow';
+                  else if (eff.id === 'shimmer') previewClass = 'effect-shimmer';
+                  else if (eff.id === 'shine') previewClass = 'effect-shine';
+                  else if (eff.id === 'glow') previewClass = 'effect-glow';
+                  else if (eff.id === 'shake') previewClass = 'effect-shake';
+                  else if (eff.id === 'glitch') previewClass = 'effect-glitch';
+                  else if (eff.id === 'flicker') previewClass = 'effect-flicker';
+                  else if (eff.id === 'flip') previewClass = 'effect-flip';
+                  else if (eff.id === 'wave') previewClass = 'effect-wave';
+                  else if (eff.id === 'bounce') previewClass = 'effect-bounce';
+                  else if (eff.id === 'pulse') previewClass = 'effect-pulse';
+                  else if (eff.id === 'gold') previewClass = 'effect-gold';
+                  else if (eff.id === 'neon-cyan') previewClass = 'effect-neon-cyan';
+                  else if (eff.id === 'aura') previewClass = 'effect-aura';
+
                   return (
                     <button
                       key={eff.id}
@@ -670,14 +714,14 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
                         <span className="absolute top-2 left-2 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
                       )}
                       <div
-                        className={`text-xs font-bold tracking-wide transition-colors ${
+                        className={`text-xs font-bold tracking-wide transition-colors ${previewClass} ${
                           isSelected ? 'text-emerald-300 font-extrabold' : 'text-white/90 group-hover:text-white'
                         }`}
                       >
                         {eff.id === 'typewriter' ? (
                           <span className="inline-flex items-center">
-                            <span>Typewriter</span>
-                            <span className="w-2 h-3.5 ml-1 inline-block bg-current animate-pulse rounded-[1px] shadow-[0_0_6px_currentColor]" />
+                            <span>Type</span>
+                            <span className="w-1.5 h-3.5 ml-0.5 inline-block bg-current animate-pulse rounded-[1px] shadow-[0_0_6px_currentColor]" />
                           </span>
                         ) : (
                           eff.name
@@ -691,21 +735,30 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
             </div>
 
             {/* Modal Footer */}
-            <div className="pt-3 border-t border-white/10 flex items-center justify-end gap-2">
+            <div className="pt-3 border-t border-white/10 flex items-center justify-between">
               <button
                 type="button"
-                onClick={() => setBioModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs text-white/60 hover:text-white hover:bg-white/5 cursor-pointer"
+                onClick={() => setTempBioEffects([])}
+                className="px-4 py-2 rounded-xl text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer"
               >
-                ยกเลิก
+                ลบทั้งหมด
               </button>
-              <button
-                type="button"
-                onClick={confirmBioEffects}
-                className="px-6 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition-all shadow-lg shadow-emerald-500/25 cursor-pointer"
-              >
-                ยืนยัน ({tempBioEffects.length})
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setBioModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs text-white/60 hover:text-white hover:bg-white/5 cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmBioEffects}
+                  className="px-6 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition-all shadow-lg shadow-emerald-500/25 cursor-pointer"
+                >
+                  ยืนยัน ({tempBioEffects.length})
+                </button>
+              </div>
             </div>
           </div>
         </div>

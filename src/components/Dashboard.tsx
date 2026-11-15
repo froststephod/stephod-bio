@@ -33,6 +33,7 @@ import {
   Crown,
   Lock,
   ShieldCheck,
+  ArrowRight,
 } from 'lucide-react';
 import { ProfileData, SocialLink, Badge, ThemeConfig, AvatarDecoration, AuthUser } from '@/types/profile';
 import ProfileView from './ProfileView';
@@ -1003,6 +1004,35 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
             {/* 2. Theme & Style Tab (Inspired by yura.lol layout screenshot) */}
             {activeTab === 'theme' && (
               <div className="space-y-5">
+                {/* Shortcut to Name Effects (yura.lol style) */}
+                <div
+                  onClick={() => setActiveTab('effects')}
+                  className="p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/15 transition-all flex items-center justify-between cursor-pointer group shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                      <Sparkles className="w-5 h-5 animate-pulse" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-white flex items-center gap-2">
+                        <span>เอฟเฟกต์ชื่อ (Name Effects)</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300 font-mono border border-emerald-500/30">
+                          34 เอฟเฟกต์ ปลดล็อกฟรี 100%
+                        </span>
+                      </div>
+                      <p className="text-xs text-white/60 mt-0.5">
+                        {profile.theme.extraEffects?.nameEffects && profile.theme.extraEffects.nameEffects.length > 0
+                          ? `กำลังใช้งาน: ${profile.theme.extraEffects.nameEffects.join(' + ')}`
+                          : 'Typewriter, Glitch, Glow, Wave, Flames, Rainbow และอีกมากมาย คลิกเพื่อเลือก'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold group-hover:translate-x-1 transition-transform">
+                    <span>เลือกเอฟเฟกต์</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </div>
+                </div>
+
                 {/* 1. เลย์เอาต์ (Layout Section) */}
                 <div className="p-4 sm:p-5 rounded-2xl border border-white/10 bg-[#121319] space-y-4">
                   <div className="flex items-center justify-between">
