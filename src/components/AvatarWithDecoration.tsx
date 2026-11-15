@@ -42,11 +42,7 @@ export default function AvatarWithDecoration({
     <div className={`relative inline-block ${className}`}>
       {/* Avatar Container */}
       <div
-        className={`relative ${sizeClasses[size]} ${currentShapeClass} p-1 transition-transform duration-300 hover:scale-105 overflow-hidden`}
-        style={{
-          background: `linear-gradient(135deg, ${accentColor}, #ffffff15)`,
-          boxShadow: `0 0 25px ${accentColor}35`,
-        }}
+        className={`relative ${sizeClasses[size]} ${currentShapeClass} transition-transform duration-300 hover:scale-105 overflow-hidden`}
       >
         <img
           src={avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'}
