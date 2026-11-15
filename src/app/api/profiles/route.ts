@@ -26,13 +26,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid username format' }, { status: 400 });
     }
 
+    // Must await: serverless functions can be frozen right after responding,
+    // which would silently drop the cloud save and cause stale/flip-flopping data.
     const saved = saveProfile({
       ...body,
       username: cleanUsername,
     });
-
-    // Fire cloud KV persistence in the background (non-blocking for instant <20ms save response)
-    pushProfileToCloud(saved).catch((e) => console.warn('Cloud KV push:', e));
+    await pushProfileToCloud(saved);
 
     const res = NextResponse.json({ success: true, profile: saved });
     res.cookies.set(`stephod_p_${cleanUsername}`, encodeURIComponent(JSON.stringify(saved)), {
