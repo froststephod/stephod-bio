@@ -214,9 +214,28 @@ export default function AuthScreen({ onLoginSuccess }: Props) {
 
         {/* Error Alert */}
         {error && (
-          <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5 animate-in fade-in">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
-            <span className="leading-relaxed">{error}</span>
+          <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex flex-col gap-2 animate-in fade-in">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+              <span className="leading-relaxed">{error}</span>
+            </div>
+            {mode === 'login' && error.includes('ไม่พบบัญชี') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('register');
+                  setError(null);
+                  if (!displayName && username) {
+                    setDisplayName(username.charAt(0).toUpperCase() + username.slice(1));
+                  }
+                }}
+                className="mt-1 py-2 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-sm"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                <span>คลิกตรงนี้เพื่อไปสมัครสมาชิกชื่อ @{username || 'ใหม่'} ได้ทันที</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         )}
 
@@ -293,6 +312,24 @@ export default function AuthScreen({ onLoginSuccess }: Props) {
                 </>
               )}
             </button>
+
+            <div className="pt-2 text-center">
+              <span className="text-xs text-white/50">ยังไม่มีบัญชีผู้ใช้? </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('register');
+                  setError(null);
+                  setSuccessMsg(null);
+                  if (!displayName && username) {
+                    setDisplayName(username.charAt(0).toUpperCase() + username.slice(1));
+                  }
+                }}
+                className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-4 transition-colors"
+              >
+                สมัครสมาชิกที่นี่ ✨
+              </button>
+            </div>
           </form>
         )}
 
@@ -415,6 +452,21 @@ export default function AuthScreen({ onLoginSuccess }: Props) {
                 </>
               )}
             </button>
+
+            <div className="pt-2 text-center">
+              <span className="text-xs text-white/50">มีบัญชีผู้ใช้อยู่แล้ว? </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('login');
+                  setError(null);
+                  setSuccessMsg(null);
+                }}
+                className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 underline underline-offset-4 transition-colors"
+              >
+                เข้าสู่ระบบที่นี่ 🔑
+              </button>
+            </div>
           </form>
         )}
 
