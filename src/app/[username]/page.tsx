@@ -2,8 +2,11 @@ import { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { getProfileAsync, incrementViews, saveProfile } from '@/lib/storage';
 import { SESSION_COOKIE_NAME, createOrGetProfileForDiscordUser } from '@/lib/auth';
+import { getAnnouncement } from '@/lib/admin';
 import ProfileView from '@/components/ProfileView';
 import ProfileFallbackClient from '@/components/ProfileFallbackClient';
+import SuspendedAccountView from '@/components/SuspendedAccountView';
+import AnnouncementBanner from '@/components/AnnouncementBanner';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -17,6 +20,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!profile) {
     return {
       title: `${params.username} | STEPHOD Bio`,
+    };
+  }
+
+  if (profile.banned) {
+    return {
+      title: `บัญชีถูกระงับ (@${profile.username}) | STEPHOD Bio`,
+      description: 'บัญชีนี้ถูกระงับการใช้งานชั่วคราวโดยผู้ดูแลระบบ',
     };
   }
 
@@ -34,6 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function UserProfilePage({ params }: Props) {
   const { username } = params;
   let profile = await getProfileAsync(username);
+  const announcement = await getAnnouncement();
 
   // If profile not yet found on this serverless instance, check session cookie
   if (!profile) {
@@ -67,11 +78,35 @@ export default async function UserProfilePage({ params }: Props) {
   }
 
   if (!profile) {
-    return <ProfileFallbackClient username={username} />;
+    return (
+      <>
+        <AnnouncementBanner announcement={announcement} />
+        <ProfileFallbackClient username={username} />
+      </>
+    );
+  }
+
+  // Account suspended / banned check
+  if (profile.banned) {
+    return (
+      <>
+        <AnnouncementBanner announcement={announcement} />
+        <SuspendedAccountView
+          username={profile.username}
+          banReason={profile.banReason}
+          bannedAt={profile.bannedAt}
+        />
+      </>
+    );
   }
 
   // Increment view count
   incrementViews(username);
 
-  return <ProfileView profile={profile} />;
+  return (
+    <>
+      <AnnouncementBanner announcement={announcement} />
+      <ProfileView profile={profile} />
+    </>
+  );
 }

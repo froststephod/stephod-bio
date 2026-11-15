@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { ProfileData } from '@/types/profile';
+import { saveChunkedDoc, loadChunkedDoc, tombstoneChunkedDoc, kvRead, kvSet } from './cloud-kv';
 
 const CLOUD_DB_TOKEN = process.env.CLOUD_DB_TOKEN || 'MQtLVyembPnxdpR74HeB';
 const CLOUD_DB_BASE = 'https://api.echovalue.dev/kv/default';
@@ -322,65 +323,86 @@ export async function fetchProfileFromCloud(username: string): Promise<ProfileDa
   }
 }
 
-// Push to Cloud KV (multi-chunk)
-export async function pushProfileToCloud(profile: ProfileData): Promise<void> {
+// ---------------------------------------------------------------------------
+// Cloud persistence (full profile, versioned chunks). Returns true only when
+// every chunk AND the meta record were written successfully.
+// ---------------------------------------------------------------------------
+function profileSummary(p: ProfileData): Record<string, unknown> {
+  return {
+    d: (p.displayName || '').slice(0, 40),
+    w: p.views || 0,
+    k: p.likes || 0,
+    b: p.banned ? 1 : 0,
+    o: (p.ownerDiscordTag || '').slice(0, 32),
+    u: p.updatedAt,
+  };
+}
+
+export async function pushProfileToCloud(profile: ProfileData): Promise<boolean> {
   const key = profile.username.toLowerCase().trim();
-  try {
-    const basic = {
-      username: key,
-      displayName: profile.displayName,
-      bio: profile.bio || '',
-      occupation: profile.occupation || '',
-      location: profile.location || '',
-      titles: profile.titles || [],
-      updatedAt: profile.updatedAt || new Date().toISOString(),
-      createdAt: profile.createdAt || new Date().toISOString(),
-    };
-
-    const urls = {
-      avatarUrl: profile.avatarUrl || '',
-      bannerUrl: profile.bannerUrl || '',
-      avatarDecoration: profile.avatarDecoration || { type: 'none' },
-    };
-
-    const themeData = {
-      theme: profile.theme,
-      audio: profile.audio,
-      discordWidget: profile.discordWidget,
-    };
-
-    const social = {
-      badges: profile.badges || [],
-      socialLinks: profile.socialLinks || [],
-      views: profile.views || 0,
-      likes: profile.likes || 0,
-    };
-
-    await Promise.all([
-      fetch(`${CLOUD_DB_BASE}/p_basic_${key}`, {
-        method: 'POST',
-        headers: { 'x-token': CLOUD_DB_TOKEN, 'Content-Type': 'application/json' },
-        body: JSON.stringify(basic),
-      }),
-      fetch(`${CLOUD_DB_BASE}/p_urls_${key}`, {
-        method: 'POST',
-        headers: { 'x-token': CLOUD_DB_TOKEN, 'Content-Type': 'application/json' },
-        body: JSON.stringify(urls),
-      }),
-      fetch(`${CLOUD_DB_BASE}/p_theme_${key}`, {
-        method: 'POST',
-        headers: { 'x-token': CLOUD_DB_TOKEN, 'Content-Type': 'application/json' },
-        body: JSON.stringify(themeData),
-      }),
-      fetch(`${CLOUD_DB_BASE}/p_social_${key}`, {
-        method: 'POST',
-        headers: { 'x-token': CLOUD_DB_TOKEN, 'Content-Type': 'application/json' },
-        body: JSON.stringify(social),
-      }),
-    ]);
-  } catch (err) {
-    console.warn('Cloud KV push note:', err);
+  const ok = await saveChunkedDoc(`pf_${key}`, profile, profileSummary(profile));
+  if (ok) {
+    await addToUserIndex(key);
+  } else {
+    console.warn('Cloud save failed for profile', key);
   }
+  return ok;
+}
+
+export async function deleteProfileFromCloud(username: string): Promise<boolean> {
+  const key = username.toLowerCase().trim();
+  const ok = await tombstoneChunkedDoc(`pf_${key}`);
+  if (ok) await removeFromUserIndex(key);
+  delete inMemoryProfiles[key];
+  persistProfiles();
+  return ok;
+}
+
+// ---------------------------------------------------------------------------
+// User index (the KV store has no "list keys" call, so names are tracked in
+// small chunks of <= 20 names: usr_idx_0, usr_idx_1, ...)
+// ---------------------------------------------------------------------------
+const IDX_CHUNK = 20;
+
+export async function readUserIndex(): Promise<{ names: string[]; complete: boolean }> {
+  const names: string[] = [];
+  for (let i = 0; i < 50; i++) {
+    const r = await kvRead<string[]>(`usr_idx_${i}`);
+    if (r.status === 'missing') return { names, complete: true };
+    if (r.status === 'error') return { names, complete: false };
+    if (!Array.isArray(r.data) || r.data.length === 0) return { names, complete: true };
+    names.push(...r.data.filter((n) => typeof n === 'string'));
+    if (r.data.length < IDX_CHUNK) return { names, complete: true };
+  }
+  return { names, complete: true };
+}
+
+async function writeUserIndex(names: string[]): Promise<boolean> {
+  const unique = Array.from(new Set(names)).sort();
+  const chunks = Math.max(1, Math.ceil(unique.length / IDX_CHUNK));
+  const writes = await Promise.all(
+    Array.from({ length: chunks }, (_, i) =>
+      kvSet(`usr_idx_${i}`, unique.slice(i * IDX_CHUNK, (i + 1) * IDX_CHUNK))
+    )
+  );
+  // An empty trailing chunk marks the end of the list for readers
+  if (unique.length > 0 && unique.length % IDX_CHUNK === 0) {
+    writes.push(await kvSet(`usr_idx_${chunks}`, []));
+  }
+  return writes.every(Boolean);
+}
+
+export async function addToUserIndex(key: string): Promise<void> {
+  const { names, complete } = await readUserIndex();
+  if (!complete) return; // never overwrite the index after a failed read
+  if (names.includes(key)) return;
+  await writeUserIndex([...names, key]);
+}
+
+export async function removeFromUserIndex(key: string): Promise<void> {
+  const { names, complete } = await readUserIndex();
+  if (!complete || !names.includes(key)) return;
+  await writeUserIndex(names.filter((n) => n !== key));
 }
 
 export function getAllProfiles(): Record<string, ProfileData> {
@@ -394,20 +416,38 @@ export function getProfile(username: string): ProfileData | null {
   return inMemoryProfiles[key] || null;
 }
 
-export async function getProfileAsync(username: string): Promise<ProfileData | null> {
+export type ProfileState = { profile: ProfileData | null; deleted: boolean };
+
+export async function getProfileStateAsync(username: string): Promise<ProfileState> {
   initProfiles();
   const key = username.toLowerCase().trim();
 
-  // Try cloud KV first for instant real-time sync across Vercel instances
-  const cloud = await fetchProfileFromCloud(key);
-  if (cloud) {
-    return cloud;
+  // 1) New full-profile cloud format
+  const loaded = await loadChunkedDoc<ProfileData>(`pf_${key}`);
+  if (loaded.state === 'ok' && loaded.doc && loaded.doc.username) {
+    inMemoryProfiles[key] = loaded.doc;
+    return { profile: loaded.doc, deleted: false };
+  }
+  if (loaded.state === 'deleted') {
+    delete inMemoryProfiles[key];
+    return { profile: null, deleted: true };
   }
 
-  return inMemoryProfiles[key] || null;
+  // 2) Legacy 4-chunk cloud format (profiles saved before the upgrade)
+  if (loaded.state === 'missing') {
+    const legacy = await fetchProfileFromCloud(key);
+    if (legacy) return { profile: legacy, deleted: false };
+  }
+
+  // 3) Instance memory / seed data
+  return { profile: inMemoryProfiles[key] || null, deleted: false };
 }
 
-export function saveProfile(profile: ProfileData): ProfileData {
+export async function getProfileAsync(username: string): Promise<ProfileData | null> {
+  return (await getProfileStateAsync(username)).profile;
+}
+
+function saveProfileLocal(profile: ProfileData): ProfileData {
   initProfiles();
   const key = profile.username.toLowerCase().trim();
   const existing = inMemoryProfiles[key];
@@ -423,17 +463,22 @@ export function saveProfile(profile: ProfileData): ProfileData {
 
   inMemoryProfiles[key] = updated;
   persistProfiles();
-
-  // Fire-and-forget sync to cloud KV
-  pushProfileToCloud(updated).catch(() => {});
-
   return updated;
 }
 
-export async function saveProfileAsync(profile: ProfileData): Promise<ProfileData> {
-  const updated = saveProfile(profile);
-  await pushProfileToCloud(updated);
+export function saveProfile(profile: ProfileData): ProfileData {
+  const updated = saveProfileLocal(profile);
+  // Fire-and-forget sync to cloud KV (callers that need certainty use saveProfileAsync)
+  pushProfileToCloud(updated).catch(() => {});
   return updated;
+}
+
+export async function saveProfileAsync(
+  profile: ProfileData
+): Promise<{ profile: ProfileData; cloudSaved: boolean }> {
+  const updated = saveProfileLocal(profile);
+  const cloudSaved = await pushProfileToCloud(updated);
+  return { profile: updated, cloudSaved };
 }
 
 export function incrementViews(username: string): number {

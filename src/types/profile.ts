@@ -112,4 +112,8 @@ export interface ProfileData {
   likes: number;
   createdAt: string;
   updatedAt: string;
+  // Admin moderation (set only through the admin backend)
+  banned?: boolean;
+  banReason?: string;
+  bannedAt?: string;
 }

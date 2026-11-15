@@ -2,15 +2,19 @@ import Link from 'next/link';
 import { Sparkles, Music, ShieldCheck, ArrowRight, Eye, Layers, Sliders, ExternalLink } from 'lucide-react';
 import { getAllProfiles } from '@/lib/storage';
 import { siteConfig } from '@/config/site';
+import { getAnnouncement } from '@/lib/admin';
+import AnnouncementBanner from '@/components/AnnouncementBanner';
 
 export const dynamic = 'force-dynamic';
 
-export default function HomePage() {
+export default async function HomePage() {
   const profilesMap = getAllProfiles();
   const profiles = Object.values(profilesMap);
+  const announcement = await getAnnouncement();
 
   return (
     <div className="min-h-screen bg-[#07080e] text-white selection:bg-purple-500/30 selection:text-white flex flex-col relative overflow-hidden">
+      <AnnouncementBanner announcement={announcement} />
       {/* Background Glow Orbs */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-600/15 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute top-3/4 left-1/3 w-[500px] h-[500px] bg-blue-600/15 rounded-full blur-[140px] pointer-events-none" />

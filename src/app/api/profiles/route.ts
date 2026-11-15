@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllProfiles, saveProfile, pushProfileToCloud } from '@/lib/storage';
+import { getAllProfiles, saveProfile, pushProfileToCloud, getProfileAsync } from '@/lib/storage';
 import { ProfileData } from '@/types/profile';
+import { preserveAdminFields } from '@/lib/admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,12 +27,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid username format' }, { status: 400 });
     }
 
-    // Must await: serverless functions can be frozen right after responding,
-    // which would silently drop the cloud save and cause stale/flip-flopping data.
-    const saved = saveProfile({
+    // Check if account is banned or has admin badges
+    const existing = await getProfileAsync(cleanUsername);
+    if (existing?.banned) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `บัญชีนี้ถูกระงับการใช้งาน ${existing.banReason ? `(${existing.banReason})` : ''}`,
+        },
+        { status: 403 }
+      );
+    }
+
+    // Merge and preserve admin badges & flags
+    const sanitized: ProfileData = {
       ...body,
       username: cleanUsername,
-    });
+    };
+    const protectedProfile = preserveAdminFields(sanitized, existing);
+
+    // Must await: serverless functions can be frozen right after responding,
+    // which would silently drop the cloud save and cause stale/flip-flopping data.
+    const saved = saveProfile(protectedProfile);
     await pushProfileToCloud(saved);
 
     const res = NextResponse.json({ success: true, profile: saved });
