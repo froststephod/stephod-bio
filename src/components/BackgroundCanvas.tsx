@@ -14,12 +14,32 @@ function getYouTubeVideoId(url?: string): string | null {
   return match ? match[1] : null;
 }
 
+interface Meteor {
+  x: number;
+  y: number;
+  length: number;
+  speed: number;
+  opacity: number;
+}
+
+interface Sakura {
+  x: number;
+  y: number;
+  size: number;
+  speedY: number;
+  speedX: number;
+  angle: number;
+  angularSpeed: number;
+  opacity: number;
+}
+
 export default function BackgroundCanvas({ theme }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const bgEffect = theme.extraEffects?.bgEffect || 'none';
 
   useEffect(() => {
     if (theme.backgroundType === 'custom-image' || theme.backgroundType === 'custom-video') {
-      return;
+      if (bgEffect === 'none') return;
     }
 
     const canvas = canvasRef.current;
@@ -38,8 +58,8 @@ export default function BackgroundCanvas({ theme }: Props) {
     };
     window.addEventListener('resize', handleResize);
 
-    // Particle setups
-    const count = theme.backgroundType === 'cyber-rain' ? 80 : 100;
+    // 1. Regular Particles setup
+    const count = theme.backgroundType === 'cyber-rain' || bgEffect === 'digital-rain' ? 80 : 100;
     const items: Array<{
       x: number;
       y: number;
@@ -57,19 +77,51 @@ export default function BackgroundCanvas({ theme }: Props) {
         x: Math.random() * width,
         y: Math.random() * height,
         size: Math.random() * 2 + 1,
-        speedY: theme.backgroundType === 'cyber-rain' ? Math.random() * 4 + 2 : (Math.random() - 0.5) * 0.4,
+        speedY: (theme.backgroundType === 'cyber-rain' || bgEffect === 'digital-rain') ? Math.random() * 4 + 2 : (Math.random() - 0.5) * 0.4,
         speedX: (Math.random() - 0.5) * 0.4,
         alpha: Math.random() * 0.7 + 0.2,
         char: chars[Math.floor(Math.random() * chars.length)],
       });
     }
 
+    // 2. Extra Effect: Shooting Stars Meteors
+    const meteors: Meteor[] = [];
+    const spawnMeteor = () => {
+      meteors.push({
+        x: Math.random() * width * 1.2 - width * 0.2,
+        y: -50,
+        length: Math.random() * 120 + 80,
+        speed: Math.random() * 8 + 12,
+        opacity: Math.random() * 0.6 + 0.4,
+      });
+    };
+
+    // 3. Extra Effect: Sakura Petals
+    const petals: Sakura[] = [];
+    if (bgEffect === 'sakura') {
+      for (let i = 0; i < 40; i++) {
+        petals.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          size: Math.random() * 7 + 6,
+          speedY: Math.random() * 1.5 + 1,
+          speedX: Math.random() * 1 - 0.2,
+          angle: Math.random() * Math.PI * 2,
+          angularSpeed: (Math.random() - 0.5) * 0.04,
+          opacity: Math.random() * 0.6 + 0.3,
+        });
+      }
+    }
+
+    let meteorTimer = 0;
+
     const render = () => {
       ctx.clearRect(0, 0, width, height);
 
-      if (theme.backgroundType === 'cyber-rain') {
-        ctx.fillStyle = theme.accentColor || '#a855f7';
-        ctx.font = '12px monospace';
+      // Render Base background
+      if (theme.backgroundType === 'cyber-rain' || bgEffect === 'digital-rain') {
+        ctx.fillStyle = bgEffect === 'digital-rain' ? '#10b981' : (theme.accentColor || '#a855f7');
+        ctx.font = '13px monospace';
         items.forEach((p) => {
           ctx.globalAlpha = p.alpha;
           if (p.char) ctx.fillText(p.char, p.x, p.y);
@@ -80,7 +132,7 @@ export default function BackgroundCanvas({ theme }: Props) {
             p.char = chars[Math.floor(Math.random() * chars.length)];
           }
         });
-      } else {
+      } else if (theme.backgroundType !== 'custom-image' && theme.backgroundType !== 'custom-video') {
         // stars or particles
         items.forEach((p) => {
           ctx.beginPath();
@@ -99,6 +151,82 @@ export default function BackgroundCanvas({ theme }: Props) {
         });
       }
 
+      // Render Extra Effect: Shooting Stars (ฝนดาวตก)
+      if (bgEffect === 'shooting-stars') {
+        meteorTimer++;
+        if (meteorTimer % 45 === 0) {
+          spawnMeteor();
+        }
+
+        for (let i = meteors.length - 1; i >= 0; i--) {
+          const m = meteors[i];
+          m.x += m.speed;
+          m.y += m.speed * 0.8;
+
+          const grad = ctx.createLinearGradient(m.x, m.y, m.x - m.length, m.y - m.length * 0.8);
+          grad.addColorStop(0, `rgba(255, 255, 255, ${m.opacity})`);
+          grad.addColorStop(0.3, `rgba(16, 185, 129, ${m.opacity * 0.7})`);
+          grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+          ctx.beginPath();
+          ctx.moveTo(m.x, m.y);
+          ctx.lineTo(m.x - m.length, m.y - m.length * 0.8);
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          if (m.y > height + 100 || m.x > width + 100) {
+            meteors.splice(i, 1);
+          }
+        }
+      }
+
+      // Render Extra Effect: Sakura Petals (ซากุระร่วง)
+      if (bgEffect === 'sakura') {
+        petals.forEach((petal) => {
+          ctx.save();
+          ctx.translate(petal.x, petal.y);
+          ctx.rotate(petal.angle);
+          ctx.globalAlpha = petal.opacity;
+
+          ctx.beginPath();
+          ctx.ellipse(0, 0, petal.size, petal.size * 0.5, 0, 0, Math.PI * 2);
+          ctx.fillStyle = '#f472b6'; // pink petal
+          ctx.fill();
+          ctx.restore();
+
+          petal.y += petal.speedY;
+          petal.x += Math.sin(petal.angle) * 1.5;
+          petal.angle += petal.angularSpeed;
+
+          if (petal.y > height + 20) {
+            petal.y = -20;
+            petal.x = Math.random() * width;
+          }
+        });
+      }
+
+      // Render Extra Effect: Fog Waves (คลื่นหมอก)
+      if (bgEffect === 'fog-waves') {
+        const time = Date.now() * 0.0005;
+        ctx.save();
+        ctx.globalAlpha = 0.08;
+        const grad = ctx.createRadialGradient(
+          width * 0.5 + Math.sin(time) * 150,
+          height * 0.5 + Math.cos(time) * 100,
+          50,
+          width * 0.5,
+          height * 0.5,
+          width * 0.7
+        );
+        grad.addColorStop(0, '#10b981');
+        grad.addColorStop(0.5, '#06b6d4');
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
+        ctx.restore();
+      }
+
       animationFrameId = requestAnimationFrame(render);
     };
 
@@ -108,7 +236,7 @@ export default function BackgroundCanvas({ theme }: Props) {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [theme.backgroundType, theme.accentColor]);
+  }, [theme.backgroundType, theme.accentColor, bgEffect]);
 
   // Handle Custom Video (YouTube or direct MP4)
   if (theme.backgroundType === 'custom-video' && theme.backgroundVideoUrl) {
@@ -124,6 +252,7 @@ export default function BackgroundCanvas({ theme }: Props) {
             title="Background Video"
           />
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
+          <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-10" />
         </div>
       );
     }
@@ -138,35 +267,29 @@ export default function BackgroundCanvas({ theme }: Props) {
           className="w-full h-full object-cover filter brightness-[0.5]"
           src={theme.backgroundVideoUrl}
         />
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" />
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-10" />
       </div>
     );
   }
 
-  // Handle Custom Image / GIF
+  // Handle Custom Image
   if (theme.backgroundType === 'custom-image' && theme.backgroundImageUrl) {
     return (
       <div
-        className="absolute inset-0 -z-0 bg-cover bg-center bg-no-repeat pointer-events-none transition-all duration-700"
-        style={{
-          backgroundImage: `url('${theme.backgroundImageUrl}')`,
-        }}
+        className="absolute inset-0 -z-0 bg-cover bg-center bg-no-repeat pointer-events-none"
+        style={{ backgroundImage: `url(${theme.backgroundImageUrl})` }}
       >
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-[3px]" />
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-10" />
       </div>
     );
   }
 
-  // Ambient Canvas (Stars / Particles / Rain)
   return (
-    <div className="absolute inset-0 -z-0 bg-[#090a0f] pointer-events-none overflow-hidden">
-      <div
-        className="absolute inset-0 opacity-20 pointer-events-none"
-        style={{
-          background: `radial-gradient(circle at 50% 50%, ${theme.accentColor || '#8b5cf6'} 0%, transparent 60%)`,
-        }}
-      />
-      <canvas ref={canvasRef} className="w-full h-full" />
-    </div>
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 -z-0 w-full h-full pointer-events-none"
+    />
   );
 }

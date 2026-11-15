@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { fireConfetti } from '@/lib/confetti';
-import { Eye, Heart, Sparkles, MapPin, Share2, Check } from 'lucide-react';
+import { Eye, Heart, Sparkles, MapPin, Share2, Check, Volume2 } from 'lucide-react';
 import { ProfileData } from '@/types/profile';
 import BackgroundCanvas from './BackgroundCanvas';
 import AudioPlayer from './AudioPlayer';
@@ -14,6 +14,7 @@ import { getSpotifyInfo } from '@/lib/music';
 import { siteConfig } from '@/config/site';
 import { getFontCssFamily } from '@/lib/fonts';
 import AnimatedTextEffect from './AnimatedTextEffect';
+import CursorTrail from './CursorTrail';
 
 interface Props {
   profile: ProfileData;
@@ -188,6 +189,37 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
   const nameFont = profile.theme.nameFont || 'inherit';
   const textFont = profile.theme.textFont || 'inherit';
 
+  // Extra Effects state
+  const isGlowIcons = profile.theme.extraEffects?.glowIcons !== false;
+  const isViewsAnimation = !!profile.theme.extraEffects?.viewsAnimation;
+  const isAudioVisualizer = !!profile.theme.extraEffects?.audioVisualizer;
+
+  const renderAudioVisualizer = () => {
+    if (!isAudioVisualizer) return null;
+    return (
+      <div className="mt-3.5 w-full flex items-center justify-between px-3.5 py-2 rounded-2xl bg-black/40 border border-emerald-500/30 backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+        <div className="flex items-center gap-2 text-[10px] text-emerald-400 font-mono font-bold tracking-wider">
+          <Volume2 className="w-3.5 h-3.5 animate-pulse" />
+          <span>AUDIO VISUALIZER</span>
+        </div>
+        <div className="flex items-end gap-1 h-4">
+          {[35, 75, 20, 95, 60, 40, 85, 100, 50, 90, 30, 80, 70, 45, 65, 30].map((h, i) => (
+            <span
+              key={i}
+              className="w-1 rounded-full bg-gradient-to-t from-emerald-500 to-cyan-400 animate-pulse"
+              style={{
+                height: `${h}%`,
+                animationDuration: `${0.35 + (i % 6) * 0.12}s`,
+                animationDelay: `${i * 0.04}s`,
+                animationIterationCount: 'infinite',
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   // Corner radius styling
   let borderRadiusStyle: React.CSSProperties = { borderRadius: `${radiusPx}px` };
   let cornerClass = 'rounded-2xl';
@@ -289,10 +321,23 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
         </div>
       )}
 
+      {/* Interactive Cursor Trail Particles */}
+      <CursorTrail type={profile.theme.extraEffects?.cursorTrail} />
+
       {/* Main Profile Card Container */}
       <div
-        className={`relative w-full ${maxCardWidth} z-10 transition-all duration-500 ${
-          hasEntered ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
+        className={`relative w-full ${maxCardWidth} z-10 transition-all ${
+          hasEntered
+            ? profile.theme.extraEffects?.entranceAnimation === 'zoom'
+              ? 'animate-in zoom-in-75 duration-700 ease-out opacity-100 scale-100 translate-y-0'
+              : profile.theme.extraEffects?.entranceAnimation === 'drop'
+              ? 'animate-in slide-in-from-top-36 duration-700 ease-out opacity-100 scale-100 translate-y-0'
+              : profile.theme.extraEffects?.entranceAnimation === 'slide-up'
+              ? 'animate-in slide-in-from-bottom-36 duration-700 ease-out opacity-100 scale-100 translate-y-0'
+              : profile.theme.extraEffects?.entranceAnimation === 'flip'
+              ? 'animate-in spin-in-180 duration-700 ease-out opacity-100 scale-100 translate-y-0'
+              : 'animate-in fade-in duration-500 opacity-100 scale-100 translate-y-0'
+            : 'opacity-0 scale-95 translate-y-4'
         }`}
       >
         {/* Ambient Glow behind card (hidden when transparent so it's truly invisible/luminous) */}
@@ -324,7 +369,7 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
         >
           {/* Border Beam Laser Animation */}
           {profile.theme.extraEffects?.borderBeam && (
-            <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[inherit] z-0">
+            <div className="border-beam-wrapper">
               <div className="border-beam-element" />
             </div>
           )}
@@ -502,6 +547,9 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
                 </div>
               )}
 
+              {/* Audio Visualizer (Extra Effect) */}
+              {renderAudioVisualizer()}
+
               {/* Social Links Grid */}
               {profile.socialLinks && profile.socialLinks.length > 0 && (
                 <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
@@ -511,6 +559,9 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
+                      style={{
+                        filter: isGlowIcons ? `drop-shadow(0 0 6px ${accent}60)` : undefined,
+                      }}
                       className={`group relative flex items-center gap-2.5 p-2.5 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 overflow-hidden ${
                         isTransparent
                           ? 'border-white/10 bg-black/40 backdrop-blur-md hover:bg-black/60 hover:border-white/30 shadow-lg'
@@ -536,11 +587,15 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
               <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between text-xs font-mono">
                 <div className="flex items-center gap-2 sm:gap-2.5">
                   <div
-                    className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity"
+                    className={`flex items-center gap-1.5 transition-all ${
+                      isViewsAnimation
+                        ? 'animate-pulse text-emerald-400 font-bold drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]'
+                        : 'opacity-60 hover:opacity-100'
+                    }`}
                     title="ยอดผู้เข้าชมทั้งหมด"
                     style={{ textShadow: isTransparent ? '0 1px 6px rgba(0,0,0,0.9)' : undefined }}
                   >
-                    <Eye className="w-3.5 h-3.5" />
+                    <Eye className={`w-3.5 h-3.5 ${isViewsAnimation ? 'animate-bounce text-emerald-400' : ''}`} />
                     <span>{views.toLocaleString()} views</span>
                   </div>
 
@@ -640,8 +695,14 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
                   {/* Views & Likes & Live Viewers */}
                   <div className="mt-4 pt-3 border-t border-white/10 w-full flex items-center justify-between text-xs font-mono">
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1.5 opacity-60">
-                        <Eye className="w-3.5 h-3.5" />
+                      <div
+                        className={`flex items-center gap-1.5 transition-all ${
+                          isViewsAnimation
+                            ? 'animate-pulse text-emerald-400 font-bold drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]'
+                            : 'opacity-60'
+                        }`}
+                      >
+                        <Eye className={`w-3.5 h-3.5 ${isViewsAnimation ? 'animate-bounce text-emerald-400' : ''}`} />
                         <span>{views.toLocaleString()}</span>
                       </div>
                       <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[10px] text-emerald-400 font-semibold">
@@ -742,6 +803,9 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
                     </div>
                   )}
 
+                  {/* Audio Visualizer (Extra Effect) */}
+                  {renderAudioVisualizer()}
+
                   {/* Social Links Grid */}
                   {profile.socialLinks && profile.socialLinks.length > 0 && (
                     <div className="mt-4 grid grid-cols-2 gap-2">
@@ -751,6 +815,9 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
                           href={link.url}
                           target="_blank"
                           rel="noopener noreferrer"
+                          style={{
+                            filter: isGlowIcons ? `drop-shadow(0 0 6px ${accent}60)` : undefined,
+                          }}
                           className={`group relative flex items-center gap-2 p-2 rounded-xl border transition-all overflow-hidden ${
                             isTransparent
                               ? 'border-white/10 bg-black/40 backdrop-blur-md hover:bg-black/60 hover:border-white/30'
@@ -898,6 +965,9 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
                 </div>
               )}
 
+              {/* Audio Visualizer (Extra Effect) */}
+              {renderAudioVisualizer()}
+
               {/* Social Links Strip */}
               {profile.socialLinks && profile.socialLinks.length > 0 && (
                 <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2 overflow-x-auto py-1">
@@ -908,6 +978,9 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"
+                        style={{
+                          filter: isGlowIcons ? `drop-shadow(0 0 6px ${accent}60)` : undefined,
+                        }}
                         className={`p-1.5 rounded-lg border transition-all ${
                           isTransparent
                             ? 'border-white/10 bg-black/40 backdrop-blur-md text-white/80 hover:bg-black/60'
@@ -920,8 +993,14 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
                     ))}
                   </div>
 
-                  <div className="flex items-center gap-1 text-[11px] opacity-40 font-mono flex-shrink-0">
-                    <Eye className="w-3 h-3" />
+                  <div
+                    className={`flex items-center gap-1 text-[11px] font-mono flex-shrink-0 transition-all ${
+                      isViewsAnimation
+                        ? 'animate-pulse text-emerald-400 font-bold drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]'
+                        : 'opacity-40'
+                    }`}
+                  >
+                    <Eye className={`w-3 h-3 ${isViewsAnimation ? 'animate-bounce text-emerald-400' : ''}`} />
                     <span>{(profile.views || 0).toLocaleString()}</span>
                   </div>
                 </div>

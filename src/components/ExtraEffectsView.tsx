@@ -14,7 +14,6 @@ import {
   Volume2,
   Check,
   X,
-  Lock,
   Zap,
 } from 'lucide-react';
 import { ProfileData, ExtraEffectsConfig } from '@/types/profile';
@@ -26,52 +25,52 @@ interface Props {
   saving?: boolean;
 }
 
-// 28 Name Effects
+// 28 Name Effects - All 100% unlocked and available
 const NAME_EFFECTS_LIST = [
   { id: 'typewriter', name: 'Typewriter', sub: 'รองรับหลายคำ', tag: 'typewriter' },
-  { id: 'morph', name: 'Morph', sub: 'รองรับหลายคำ', tag: 'morph', isVip: true },
-  { id: 'cherry-blossoms', name: 'Cherry Blossoms', sub: 'กลีบซากุระร่วง', tag: 'cherry', isVip: true, icon: '🌸' },
-  { id: 'shimmer', name: 'Shimmer', sub: 'แสงเงาวิ่งผ่าน', tag: 'shimmer', isVip: true },
-  { id: 'shine', name: 'Shine', sub: 'วิบวับเปล่งประกาย', tag: 'shine', isVip: true },
-  { id: 'glow', name: 'Glow', sub: 'เรืองแสงนีออน', tag: 'glow', isVip: true },
-  { id: 'shake', name: 'Shake', sub: 'สั่นไหว', tag: 'shake', isVip: true },
-  { id: 'glitch', name: 'Glitch', sub: 'ไซเบอร์กลิตช์', tag: 'glitch', isVip: true },
-  { id: 'flames', name: 'Flames', sub: 'ไฟลุกโชน', tag: 'flames', isVip: true, icon: '🔥' },
-  { id: 'lightning', name: 'Lightning', sub: 'สายฟ้าฟาด', tag: 'lightning', isVip: true, icon: '⚡' },
-  { id: 'scramble', name: 'S#[&mbD@', sub: 'แฮกเกอร์ถอดรหัส', tag: 'scramble', isVip: true },
-  { id: 'rainbow', name: 'Rainbow', sub: 'สีรุ้งเคลื่อนไหว', tag: 'rainbow', isVip: true, icon: '🌈' },
-  { id: 'flicker', name: 'Flicker', sub: 'นีออนกะพริบ', tag: 'flicker', isVip: true },
-  { id: 'flip', name: 'Flip', sub: 'พลิก 3D', tag: 'flip', isVip: true },
-  { id: 'fuzzy', name: 'Fuzzy', sub: 'เบลอสั่นไหว', tag: 'fuzzy', isVip: true },
-  { id: 'shuffle', name: 'Shuffle', sub: 'สลับอักษร', tag: 'shuffle', isVip: true },
-  { id: 'loading', name: 'Loading', sub: 'โหลดจุดวิ่ง', tag: 'loading', isVip: true },
-  { id: 'white-sparkles', name: 'White Sparkles', sub: 'ดาวขาว', tag: 'sparkles', isVip: true },
-  { id: 'rainbow-sparkles', name: 'Rainbow Sparkles', sub: 'ดาวรุ้ง', tag: 'sparkles', isVip: true },
-  { id: 'green-sparkles', name: 'Green Sparkles', sub: 'ดาวเขียว', tag: 'sparkles', isVip: true },
-  { id: 'black-sparkles', name: 'Black Sparkles', sub: 'ดาวดำ', tag: 'sparkles', isVip: true },
-  { id: 'lightblue-sparkles', name: 'Lightblue Sparkles', sub: 'ดาวฟ้า', tag: 'sparkles', isVip: true },
-  { id: 'red-sparkles', name: 'Red Sparkles', sub: 'ดาวแดง', tag: 'sparkles', isVip: true },
-  { id: 'blue-sparkles', name: 'Blue Sparkles', sub: 'ดาวน้ำเงิน', tag: 'sparkles', isVip: true },
-  { id: 'orange-sparkles', name: 'Orange Sparkles', sub: 'ดาวส้ม', tag: 'sparkles', isVip: true },
-  { id: 'pink-sparkles', name: 'Pink Sparkles', sub: 'ดาวชมพู', tag: 'sparkles', isVip: true },
-  { id: 'purple-sparkles', name: 'Purple Sparkles', sub: 'ดาวม่วง', tag: 'sparkles', isVip: true },
-  { id: 'yellow-sparkles', name: 'Yellow Sparkles', sub: 'ดาวเหลือง', tag: 'sparkles', isVip: true },
+  { id: 'morph', name: 'Morph', sub: 'รองรับหลายคำ', tag: 'morph' },
+  { id: 'cherry-blossoms', name: 'Cherry Blossoms', sub: 'กลีบซากุระร่วง', tag: 'cherry', icon: '🌸' },
+  { id: 'shimmer', name: 'Shimmer', sub: 'แสงเงาวิ่งผ่าน', tag: 'shimmer' },
+  { id: 'shine', name: 'Shine', sub: 'วิบวับเปล่งประกาย', tag: 'shine' },
+  { id: 'glow', name: 'Glow', sub: 'เรืองแสงนีออน', tag: 'glow' },
+  { id: 'shake', name: 'Shake', sub: 'สั่นไหว', tag: 'shake' },
+  { id: 'glitch', name: 'Glitch', sub: 'ไซเบอร์กลิตช์', tag: 'glitch' },
+  { id: 'flames', name: 'Flames', sub: 'ไฟลุกโชน', tag: 'flames', icon: '🔥' },
+  { id: 'lightning', name: 'Lightning', sub: 'สายฟ้าฟาด', tag: 'lightning', icon: '⚡' },
+  { id: 'scramble', name: 'S#[&mbD@', sub: 'แฮกเกอร์ถอดรหัส', tag: 'scramble' },
+  { id: 'rainbow', name: 'Rainbow', sub: 'สีรุ้งเคลื่อนไหว', tag: 'rainbow', icon: '🌈' },
+  { id: 'flicker', name: 'Flicker', sub: 'นีออนกะพริบ', tag: 'flicker' },
+  { id: 'flip', name: 'Flip', sub: 'พลิก 3D', tag: 'flip' },
+  { id: 'fuzzy', name: 'Fuzzy', sub: 'เบลอสั่นไหว', tag: 'fuzzy' },
+  { id: 'shuffle', name: 'Shuffle', sub: 'สลับอักษร', tag: 'shuffle' },
+  { id: 'loading', name: 'Loading', sub: 'โหลดจุดวิ่ง', tag: 'loading' },
+  { id: 'white-sparkles', name: 'White Sparkles', sub: 'ดาวขาว', tag: 'sparkles' },
+  { id: 'rainbow-sparkles', name: 'Rainbow Sparkles', sub: 'ดาวรุ้ง', tag: 'sparkles' },
+  { id: 'green-sparkles', name: 'Green Sparkles', sub: 'ดาวเขียว', tag: 'sparkles' },
+  { id: 'black-sparkles', name: 'Black Sparkles', sub: 'ดาวดำ', tag: 'sparkles' },
+  { id: 'lightblue-sparkles', name: 'Lightblue Sparkles', sub: 'ดาวฟ้า', tag: 'sparkles' },
+  { id: 'red-sparkles', name: 'Red Sparkles', sub: 'ดาวแดง', tag: 'sparkles' },
+  { id: 'blue-sparkles', name: 'Blue Sparkles', sub: 'ดาวน้ำเงิน', tag: 'sparkles' },
+  { id: 'orange-sparkles', name: 'Orange Sparkles', sub: 'ดาวส้ม', tag: 'sparkles' },
+  { id: 'pink-sparkles', name: 'Pink Sparkles', sub: 'ดาวชมพู', tag: 'sparkles' },
+  { id: 'purple-sparkles', name: 'Purple Sparkles', sub: 'ดาวม่วง', tag: 'sparkles' },
+  { id: 'yellow-sparkles', name: 'Yellow Sparkles', sub: 'ดาวเหลือง', tag: 'sparkles' },
 ];
 
-// 12 Bio Effects
+// 12 Bio Effects - All 100% unlocked and available
 const BIO_EFFECTS_LIST = [
   { id: 'typewriter', name: 'Typewriter', sub: 'รองรับหลายคำ', tag: 'typewriter' },
-  { id: 'morph', name: 'Morph', sub: 'รองรับหลายคำ', tag: 'morph', isVip: true },
-  { id: 'shimmer', name: 'Shimmer', sub: 'แสงเงาวิ่งผ่าน', tag: 'shimmer', isVip: true },
-  { id: 'shine', name: 'Shine', sub: 'วิบวับเปล่งประกาย', tag: 'shine', isVip: true },
-  { id: 'glow', name: 'Glow', sub: 'เรืองแสงนีออน', tag: 'glow', isVip: true },
-  { id: 'shake', name: 'Shake', sub: 'สั่นไหว', tag: 'shake', isVip: true },
-  { id: 'glitch', name: 'Glitch', sub: 'ไซเบอร์กลิตช์', tag: 'glitch', isVip: true },
-  { id: 'scramble', name: 'Scras]#!', sub: 'ถอดรหัสอักษร', tag: 'scramble', isVip: true },
-  { id: 'rainbow', name: 'Rainbow', sub: 'สีรุ้งเคลื่อนไหว', tag: 'rainbow', isVip: true },
-  { id: 'flicker', name: 'Flicker', sub: 'นีออนกะพริบ', tag: 'flicker', isVip: true },
-  { id: 'flip', name: 'Flip', sub: 'พลิก 3D', tag: 'flip', isVip: true },
-  { id: 'loading', name: 'Loading', sub: 'โหลดจุดวิ่ง', tag: 'loading', isVip: true },
+  { id: 'morph', name: 'Morph', sub: 'รองรับหลายคำ', tag: 'morph' },
+  { id: 'shimmer', name: 'Shimmer', sub: 'แสงเงาวิ่งผ่าน', tag: 'shimmer' },
+  { id: 'shine', name: 'Shine', sub: 'วิบวับเปล่งประกาย', tag: 'shine' },
+  { id: 'glow', name: 'Glow', sub: 'เรืองแสงนีออน', tag: 'glow' },
+  { id: 'shake', name: 'Shake', sub: 'สั่นไหว', tag: 'shake' },
+  { id: 'glitch', name: 'Glitch', sub: 'ไซเบอร์กลิตช์', tag: 'glitch' },
+  { id: 'scramble', name: 'Scras]#!', sub: 'ถอดรหัสอักษร', tag: 'scramble' },
+  { id: 'rainbow', name: 'Rainbow', sub: 'สีรุ้งเคลื่อนไหว', tag: 'rainbow' },
+  { id: 'flicker', name: 'Flicker', sub: 'นีออนกะพริบ', tag: 'flicker' },
+  { id: 'flip', name: 'Flip', sub: 'พลิก 3D', tag: 'flip' },
+  { id: 'loading', name: 'Loading', sub: 'โหลดจุดวิ่ง', tag: 'loading' },
 ];
 
 export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, saving = false }: Props) {
@@ -120,7 +119,6 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
       setTempNameEffects(tempNameEffects.filter((x) => x !== id));
     } else {
       if (tempNameEffects.length >= 3) {
-        // replace last
         setTempNameEffects([...tempNameEffects.slice(1), id]);
       } else {
         setTempNameEffects([...tempNameEffects, id]);
@@ -145,6 +143,49 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
   const confirmBioEffects = () => {
     updateEffects({ bioEffects: tempBioEffects });
     setBioModalOpen(false);
+  };
+
+  // Friendly Thai labels for feature cards
+  const getOverlayLabel = (id?: string) => {
+    switch (id) {
+      case 'scanlines': return 'Scanlines (จอ CRT)';
+      case 'vhs': return 'VHS Tape (เรโทร)';
+      case 'grid': return 'Cyber Grid (ตาราง)';
+      case 'vignette': return 'Vignette (ขอบมืด)';
+      default: return 'ไม่มี';
+    }
+  };
+
+  const getCursorLabel = (id?: string) => {
+    switch (id) {
+      case 'sparkles': return '✨ ประกายดาว (Sparkles)';
+      case 'hearts': return '💖 หัวใจ (Hearts)';
+      case 'stars': return '⭐ ดาวทอง (Stars)';
+      case 'bubbles': return '🫧 ฟองสบู่ (Bubbles)';
+      case 'smoke': return '💨 ควันนีออน (Smoke)';
+      default: return 'ไม่มี';
+    }
+  };
+
+  const getBgLabel = (id?: string) => {
+    switch (id) {
+      case 'sakura': return '🌸 ซากุระร่วง (Sakura)';
+      case 'shooting-stars': return '🌠 ฝนดาวตก (Shooting Stars)';
+      case 'fog-waves': return '🌫️ คลื่นหมอก (Cosmic Fog)';
+      case 'digital-rain': return '🟢 ฝนดิจิทัล (Matrix Rain)';
+      default: return 'ไม่มี';
+    }
+  };
+
+  const getEntranceLabel = (id?: string) => {
+    switch (id) {
+      case 'fade-in': return 'Fade In (ค่อยๆ ปรากฏ)';
+      case 'zoom': return 'Zoom In (ขยายตัวขึ้น)';
+      case 'drop': return 'Drop In (หล่นลงมา)';
+      case 'slide-up': return 'Slide Up (เลื่อนขึ้น)';
+      case 'flip': return 'Flip 3D (พลิกตัวเปิด)';
+      default: return 'ไม่มี';
+    }
   };
 
   return (
@@ -179,18 +220,18 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
               setTempNameEffects(currentEffects.nameEffects || ['typewriter']);
               setNameModalOpen(true);
             }}
-            className="p-4 rounded-2xl border-2 border-dashed border-white/15 hover:border-emerald-500/60 bg-white/[0.02] hover:bg-white/[0.04] transition-all flex items-center justify-start gap-3 group text-left"
+            className="p-4 rounded-2xl border-2 border-dashed border-white/15 hover:border-emerald-500/60 bg-white/[0.02] hover:bg-white/[0.04] transition-all flex items-center justify-start gap-3 group text-left cursor-pointer"
           >
             <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform">
               <Pencil className="w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">
+              <div className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors truncate">
                 {currentEffects.nameEffects && currentEffects.nameEffects.length > 0
                   ? currentEffects.nameEffects.map((e) => NAME_EFFECTS_LIST.find((n) => n.id === e)?.name || e).join(' + ')
-                  : 'เอฟเฟกต์ชื่อ'}
+                  : 'เลือกเอฟเฟกต์ชื่อ'}
               </div>
-              <div className="text-[10px] text-white/40 mt-0.5">คลิกเพื่อเลือกเอฟเฟกต์ชื่อ (สูงสุด 3 แบบ)</div>
+              <div className="text-[10px] text-white/40 mt-0.5">คลิกเพื่อเลือกเอฟเฟกต์ชื่อ (เลือกได้สูงสุด 3 แบบ)</div>
             </div>
           </button>
 
@@ -201,16 +242,16 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
               setTempBioEffects(currentEffects.bioEffects || []);
               setBioModalOpen(true);
             }}
-            className="p-4 rounded-2xl border-2 border-dashed border-white/15 hover:border-emerald-500/60 bg-white/[0.02] hover:bg-white/[0.04] transition-all flex items-center justify-start gap-3 group text-left"
+            className="p-4 rounded-2xl border-2 border-dashed border-white/15 hover:border-emerald-500/60 bg-white/[0.02] hover:bg-white/[0.04] transition-all flex items-center justify-start gap-3 group text-left cursor-pointer"
           >
             <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform">
               <Pencil className="w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">
+              <div className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors truncate">
                 {currentEffects.bioEffects && currentEffects.bioEffects.length > 0
                   ? currentEffects.bioEffects.map((e) => BIO_EFFECTS_LIST.find((n) => n.id === e)?.name || e).join(' + ')
-                  : 'เอฟเฟกต์ไบโอ'}
+                  : 'เลือกเอฟเฟกต์ไบโอ'}
               </div>
               <div className="text-[10px] text-white/40 mt-0.5">คลิกเพื่อเลือกเอฟเฟกต์ข้อความไบโอ</div>
             </div>
@@ -223,14 +264,14 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
           <button
             type="button"
             onClick={() => setOverlayModalOpen(true)}
-            className="p-3.5 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-all text-left space-y-1.5 group"
+            className="p-3.5 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] hover:border-emerald-500/40 transition-all text-left space-y-1.5 group cursor-pointer"
           >
             <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-white/60 group-hover:text-emerald-400 transition-colors">
               <Layers className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xs font-bold text-white capitalize">
-                {currentEffects.pageOverlay === 'none' || !currentEffects.pageOverlay ? 'ไม่มี' : currentEffects.pageOverlay}
+              <div className={`text-xs font-bold truncate ${currentEffects.pageOverlay && currentEffects.pageOverlay !== 'none' ? 'text-emerald-300' : 'text-white'}`}>
+                {getOverlayLabel(currentEffects.pageOverlay)}
               </div>
               <div className="text-[10px] text-white/40">โอเวอร์เลย์หน้าเพจ</div>
             </div>
@@ -240,16 +281,16 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
           <button
             type="button"
             onClick={() => setCursorModalOpen(true)}
-            className="p-3.5 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-all text-left space-y-1.5 group"
+            className="p-3.5 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] hover:border-emerald-500/40 transition-all text-left space-y-1.5 group cursor-pointer"
           >
             <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
               <MousePointer className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xs font-bold text-emerald-400 flex items-center gap-1">
-                <span>ฟีเจอร์พรีเมียม</span>
+              <div className={`text-xs font-bold truncate ${currentEffects.cursorTrail && currentEffects.cursorTrail !== 'none' ? 'text-emerald-300' : 'text-white'}`}>
+                {getCursorLabel(currentEffects.cursorTrail)}
               </div>
-              <div className="text-[10px] text-white/40">ร่องรอยเคอร์เซอร์ ({currentEffects.cursorTrail || 'ไม่มี'})</div>
+              <div className="text-[10px] text-white/40">ร่องรอยเคอร์เซอร์</div>
             </div>
           </button>
 
@@ -257,14 +298,16 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
           <button
             type="button"
             onClick={() => setBgModalOpen(true)}
-            className="p-3.5 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-all text-left space-y-1.5 group"
+            className="p-3.5 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] hover:border-emerald-500/40 transition-all text-left space-y-1.5 group cursor-pointer"
           >
             <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
               <Film className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xs font-bold text-emerald-400">ฟีเจอร์พรีเมียม</div>
-              <div className="text-[10px] text-white/40">เอฟเฟกต์พื้นหลัง ({currentEffects.bgEffect || 'ไม่มี'})</div>
+              <div className={`text-xs font-bold truncate ${currentEffects.bgEffect && currentEffects.bgEffect !== 'none' ? 'text-emerald-300' : 'text-white'}`}>
+                {getBgLabel(currentEffects.bgEffect)}
+              </div>
+              <div className="text-[10px] text-white/40">เอฟเฟกต์พื้นหลัง</div>
             </div>
           </button>
 
@@ -272,14 +315,14 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
           <button
             type="button"
             onClick={() => setEntranceModalOpen(true)}
-            className="p-3.5 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-all text-left space-y-1.5 group"
+            className="p-3.5 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] hover:border-emerald-500/40 transition-all text-left space-y-1.5 group cursor-pointer"
           >
             <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-white/60 group-hover:text-emerald-400 transition-colors">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xs font-bold text-white capitalize">
-                {currentEffects.entranceAnimation === 'none' || !currentEffects.entranceAnimation ? 'ไม่มี' : currentEffects.entranceAnimation}
+              <div className={`text-xs font-bold truncate ${currentEffects.entranceAnimation && currentEffects.entranceAnimation !== 'none' ? 'text-emerald-300' : 'text-white'}`}>
+                {getEntranceLabel(currentEffects.entranceAnimation)}
               </div>
               <div className="text-[10px] text-white/40">แอนิเมชันตอนเปิดหน้า</div>
             </div>
@@ -297,7 +340,7 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
             <button
               type="button"
               onClick={() => updateEffects({ viewsAnimation: !currentEffects.viewsAnimation })}
-              className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-0.5 ${
+              className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-0.5 cursor-pointer ${
                 currentEffects.viewsAnimation ? 'bg-emerald-500' : 'bg-white/15'
               }`}
             >
@@ -318,7 +361,7 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
             <button
               type="button"
               onClick={() => updateEffects({ cardTilt: !currentEffects.cardTilt })}
-              className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-0.5 ${
+              className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-0.5 cursor-pointer ${
                 currentEffects.cardTilt ? 'bg-emerald-500' : 'bg-white/15'
               }`}
             >
@@ -338,8 +381,8 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
             </div>
             <button
               type="button"
-              onClick={() => updateEffects({ glowIcons: !currentEffects.glowIcons })}
-              className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-0.5 ${
+              onClick={() => updateEffects({ glowIcons: currentEffects.glowIcons === false ? true : false })}
+              className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-0.5 cursor-pointer ${
                 currentEffects.glowIcons !== false ? 'bg-emerald-500' : 'bg-white/15'
               }`}
             >
@@ -359,14 +402,14 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
             <div className="flex items-center gap-2.5">
               <Flame className="w-4 h-4 text-emerald-400" />
               <div className="text-xs text-white/90 flex items-center gap-1.5">
-                <span className="text-emerald-400 text-[10px]">💎</span>
+                <span className="text-emerald-400 text-xs">✨</span>
                 <span>แสงวิ่งตามขอบ</span>
               </div>
             </div>
             <button
               type="button"
               onClick={() => updateEffects({ borderBeam: !currentEffects.borderBeam })}
-              className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-0.5 ${
+              className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-0.5 cursor-pointer ${
                 currentEffects.borderBeam ? 'bg-emerald-500' : 'bg-white/15'
               }`}
             >
@@ -383,14 +426,14 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
             <div className="flex items-center gap-2.5">
               <Volume2 className="w-4 h-4 text-emerald-400" />
               <div className="text-xs text-white/90 flex items-center gap-1.5">
-                <span className="text-emerald-400 text-[10px]">💎</span>
+                <span className="text-emerald-400 text-xs">✨</span>
                 <span>วิชวลไลเซอร์เสียง</span>
               </div>
             </div>
             <button
               type="button"
               onClick={() => updateEffects({ audioVisualizer: !currentEffects.audioVisualizer })}
-              className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-0.5 ${
+              className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-0.5 cursor-pointer ${
                 currentEffects.audioVisualizer ? 'bg-emerald-500' : 'bg-white/15'
               }`}
             >
@@ -403,7 +446,7 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
           </div>
         </div>
 
-        {/* Big Bright Green Save Button (Matching Image 1) */}
+        {/* Big Bright Green Save Button */}
         <div className="pt-2">
           <button
             type="button"
@@ -424,7 +467,7 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
       </div>
 
       {/* ========================================================
-          MODAL 1: เลือกเอฟเฟกต์ชื่อ (Images 2 & 3)
+          MODAL 1: เลือกเอฟเฟกต์ชื่อ (All Unlocked)
          ======================================================== */}
       {nameModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
@@ -437,13 +480,13 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
                   <span>เลือกเอฟเฟกต์ชื่อ</span>
                 </div>
                 <p className="text-xs text-white/50">
-                  เลือกได้สูงสุด 3 เอฟเฟกต์สำหรับชื่อ บางตัวใช้ร่วมกันไม่ได้
+                  เลือกได้สูงสุด 3 เอฟเฟกต์สำหรับชื่อ (ใช้งานได้ทุกอัน)
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setNameModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center text-white/70 hover:text-white"
+                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center text-white/70 hover:text-white cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -459,26 +502,29 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
                       key={eff.id}
                       type="button"
                       onClick={() => handleToggleNameEffect(eff.id)}
-                      className={`p-3 rounded-2xl border text-center transition-all relative flex flex-col items-center justify-center min-h-[74px] group ${
+                      className={`p-3 rounded-2xl border text-center transition-all relative flex flex-col items-center justify-center min-h-[74px] cursor-pointer group ${
                         isSelected
-                          ? 'border-emerald-500 bg-emerald-500/10 shadow-[0_0_15px_rgba(16,185,129,0.2)]'
-                          : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/20'
+                          ? 'border-emerald-500 bg-emerald-500/15 shadow-[0_0_15px_rgba(16,185,129,0.3)] ring-1 ring-emerald-500'
+                          : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/25'
                       }`}
                     >
-                      {eff.isVip && (
-                        <span className="absolute top-2 right-2 text-emerald-400">
-                          <Lock className="w-3 h-3" />
+                      {eff.icon && (
+                        <span className="absolute top-2 right-2 text-xs">
+                          {eff.icon}
                         </span>
+                      )}
+                      {isSelected && (
+                        <span className="absolute top-2 left-2 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
                       )}
                       <div
                         className={`text-xs font-bold tracking-wide transition-colors ${
-                          isSelected ? 'text-emerald-300' : 'text-white/90 group-hover:text-white'
+                          isSelected ? 'text-emerald-300 font-extrabold' : 'text-white/90 group-hover:text-white'
                         }`}
                       >
                         {eff.id === 'typewriter' ? (
                           <span className="inline-flex items-center">
                             <span>Typewriter</span>
-                            <span className="w-1.5 h-3.5 ml-1 inline-block bg-current animate-pulse rounded-[1px] shadow-[0_0_6px_currentColor]" />
+                            <span className="w-2 h-3.5 ml-1 inline-block bg-current animate-pulse rounded-[1px] shadow-[0_0_6px_currentColor]" />
                           </span>
                         ) : (
                           eff.name
@@ -496,16 +542,16 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
               <button
                 type="button"
                 onClick={() => setNameModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs text-white/60 hover:text-white hover:bg-white/5"
+                className="px-4 py-2 rounded-xl text-xs text-white/60 hover:text-white hover:bg-white/5 cursor-pointer"
               >
                 ยกเลิก
               </button>
               <button
                 type="button"
                 onClick={confirmNameEffects}
-                className="px-6 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition-all shadow-lg shadow-emerald-500/25"
+                className="px-6 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition-all shadow-lg shadow-emerald-500/25 cursor-pointer"
               >
-                ยืนยัน
+                ยืนยัน ({tempNameEffects.length}/3)
               </button>
             </div>
           </div>
@@ -513,7 +559,7 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
       )}
 
       {/* ========================================================
-          MODAL 2: เลือกเอฟเฟกต์ไบโอ (Image 4)
+          MODAL 2: เลือกเอฟเฟกต์ไบโอ (All Unlocked)
          ======================================================== */}
       {bioModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
@@ -525,12 +571,12 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
                   <Sparkles className="w-4 h-4 text-emerald-400" />
                   <span>เลือกเอฟเฟกต์ไบโอ</span>
                 </div>
-                <p className="text-xs text-white/50">เลือกเอฟเฟกต์สำหรับไบโอ</p>
+                <p className="text-xs text-white/50">เลือกเอฟเฟกต์สำหรับข้อความไบโอ (ใช้งานได้ทุกอัน)</p>
               </div>
               <button
                 type="button"
                 onClick={() => setBioModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center text-white/70 hover:text-white"
+                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center text-white/70 hover:text-white cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -546,26 +592,24 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
                       key={eff.id}
                       type="button"
                       onClick={() => handleToggleBioEffect(eff.id)}
-                      className={`p-3 rounded-2xl border text-center transition-all relative flex flex-col items-center justify-center min-h-[74px] group ${
+                      className={`p-3 rounded-2xl border text-center transition-all relative flex flex-col items-center justify-center min-h-[74px] cursor-pointer group ${
                         isSelected
-                          ? 'border-emerald-500 bg-emerald-500/10 shadow-[0_0_15px_rgba(16,185,129,0.2)]'
-                          : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/20'
+                          ? 'border-emerald-500 bg-emerald-500/15 shadow-[0_0_15px_rgba(16,185,129,0.3)] ring-1 ring-emerald-500'
+                          : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/25'
                       }`}
                     >
-                      {eff.isVip && (
-                        <span className="absolute top-2 right-2 text-emerald-400">
-                          <Lock className="w-3 h-3" />
-                        </span>
+                      {isSelected && (
+                        <span className="absolute top-2 left-2 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
                       )}
                       <div
                         className={`text-xs font-bold tracking-wide transition-colors ${
-                          isSelected ? 'text-emerald-300' : 'text-white/90 group-hover:text-white'
+                          isSelected ? 'text-emerald-300 font-extrabold' : 'text-white/90 group-hover:text-white'
                         }`}
                       >
                         {eff.id === 'typewriter' ? (
                           <span className="inline-flex items-center">
                             <span>Typewriter</span>
-                            <span className="w-1.5 h-3.5 ml-1 inline-block bg-current animate-pulse rounded-[1px] shadow-[0_0_6px_currentColor]" />
+                            <span className="w-2 h-3.5 ml-1 inline-block bg-current animate-pulse rounded-[1px] shadow-[0_0_6px_currentColor]" />
                           </span>
                         ) : (
                           eff.name
@@ -578,21 +622,21 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
               </div>
             </div>
 
-            {/* Modal Footer (Matching Image 4) */}
+            {/* Modal Footer */}
             <div className="pt-3 border-t border-white/10 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setBioModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs text-white/60 hover:text-white hover:bg-white/5"
+                className="px-4 py-2 rounded-xl text-xs text-white/60 hover:text-white hover:bg-white/5 cursor-pointer"
               >
                 ยกเลิก
               </button>
               <button
                 type="button"
                 onClick={confirmBioEffects}
-                className="px-6 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition-all shadow-lg shadow-emerald-500/25"
+                className="px-6 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition-all shadow-lg shadow-emerald-500/25 cursor-pointer"
               >
-                ยืนยัน
+                ยืนยัน ({tempBioEffects.length})
               </button>
             </div>
           </div>
@@ -604,8 +648,11 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-[#0d0f14] border border-white/15 rounded-3xl p-6 shadow-2xl space-y-4 animate-in fade-in duration-200">
             <div className="flex items-center justify-between pb-2 border-b border-white/10">
-              <h3 className="text-sm font-bold text-white">เลือกโอเวอร์เลย์หน้าเพจ</h3>
-              <button onClick={() => setOverlayModalOpen(false)} className="text-white/50 hover:text-white">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Layers className="w-4 h-4 text-emerald-400" />
+                <span>เลือกโอเวอร์เลย์หน้าเพจ</span>
+              </h3>
+              <button onClick={() => setOverlayModalOpen(false)} className="text-white/50 hover:text-white cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -623,10 +670,10 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
                     updateEffects({ pageOverlay: opt.id as any });
                     setOverlayModalOpen(false);
                   }}
-                  className={`p-3 rounded-xl border text-xs font-semibold text-center ${
+                  className={`p-3 rounded-xl border text-xs font-semibold text-center cursor-pointer transition-all ${
                     currentEffects.pageOverlay === opt.id
-                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
-                      : 'border-white/10 bg-white/5 text-white/70 hover:bg-white/10'
+                      ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500'
+                      : 'border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
                   }`}
                 >
                   {opt.label}
@@ -642,8 +689,11 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-[#0d0f14] border border-white/15 rounded-3xl p-6 shadow-2xl space-y-4 animate-in fade-in duration-200">
             <div className="flex items-center justify-between pb-2 border-b border-white/10">
-              <h3 className="text-sm font-bold text-white">เลือกร่องรอยเคอร์เซอร์</h3>
-              <button onClick={() => setCursorModalOpen(false)} className="text-white/50 hover:text-white">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <MousePointer className="w-4 h-4 text-emerald-400" />
+                <span>เลือกร่องรอยเคอร์เซอร์</span>
+              </h3>
+              <button onClick={() => setCursorModalOpen(false)} className="text-white/50 hover:text-white cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -662,10 +712,10 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
                     updateEffects({ cursorTrail: opt.id as any });
                     setCursorModalOpen(false);
                   }}
-                  className={`p-3 rounded-xl border text-xs font-semibold text-center ${
+                  className={`p-3 rounded-xl border text-xs font-semibold text-center cursor-pointer transition-all ${
                     currentEffects.cursorTrail === opt.id
-                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
-                      : 'border-white/10 bg-white/5 text-white/70 hover:bg-white/10'
+                      ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500'
+                      : 'border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
                   }`}
                 >
                   {opt.label}
@@ -681,8 +731,11 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-[#0d0f14] border border-white/15 rounded-3xl p-6 shadow-2xl space-y-4 animate-in fade-in duration-200">
             <div className="flex items-center justify-between pb-2 border-b border-white/10">
-              <h3 className="text-sm font-bold text-white">เลือกเอฟเฟกต์พื้นหลัง</h3>
-              <button onClick={() => setBgModalOpen(false)} className="text-white/50 hover:text-white">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Film className="w-4 h-4 text-emerald-400" />
+                <span>เลือกเอฟเฟกต์พื้นหลัง</span>
+              </h3>
+              <button onClick={() => setBgModalOpen(false)} className="text-white/50 hover:text-white cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -700,10 +753,10 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
                     updateEffects({ bgEffect: opt.id as any });
                     setBgModalOpen(false);
                   }}
-                  className={`p-3 rounded-xl border text-xs font-semibold text-center ${
+                  className={`p-3 rounded-xl border text-xs font-semibold text-center cursor-pointer transition-all ${
                     currentEffects.bgEffect === opt.id
-                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
-                      : 'border-white/10 bg-white/5 text-white/70 hover:bg-white/10'
+                      ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500'
+                      : 'border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
                   }`}
                 >
                   {opt.label}
@@ -719,8 +772,11 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-[#0d0f14] border border-white/15 rounded-3xl p-6 shadow-2xl space-y-4 animate-in fade-in duration-200">
             <div className="flex items-center justify-between pb-2 border-b border-white/10">
-              <h3 className="text-sm font-bold text-white">เลือกแอนิเมชันตอนเปิดหน้า</h3>
-              <button onClick={() => setEntranceModalOpen(false)} className="text-white/50 hover:text-white">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-emerald-400" />
+                <span>เลือกแอนิเมชันตอนเปิดหน้า</span>
+              </h3>
+              <button onClick={() => setEntranceModalOpen(false)} className="text-white/50 hover:text-white cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -739,10 +795,10 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
                     updateEffects({ entranceAnimation: opt.id as any });
                     setEntranceModalOpen(false);
                   }}
-                  className={`p-3 rounded-xl border text-xs font-semibold text-center ${
+                  className={`p-3 rounded-xl border text-xs font-semibold text-center cursor-pointer transition-all ${
                     currentEffects.entranceAnimation === opt.id
-                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
-                      : 'border-white/10 bg-white/5 text-white/70 hover:bg-white/10'
+                      ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500'
+                      : 'border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
                   }`}
                 >
                   {opt.label}
