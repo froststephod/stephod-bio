@@ -16,7 +16,7 @@ const CHUNK_CHARS = 880; // base64 chars per chunk (envelope adds ~30 bytes)
 export type KvRead<T> =
   | { status: 'ok'; data: T }
   | { status: 'missing' }
-  | { status: 'error' };
+  | { status: 'error'; code?: number; err?: string; raw?: string };
 
 export async function kvRead<T = any>(key: string, timeoutMs = 6000): Promise<KvRead<T>> {
   const controller = new AbortController();
@@ -37,15 +37,18 @@ export async function kvRead<T = any>(key: string, timeoutMs = 6000): Promise<Kv
     }
 
     if (res.status === 404) return { status: 'missing' };
-    if (!res.ok) return { status: 'error' };
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      return { status: 'error', code: res.status, raw: errText.slice(0, 100) };
+    }
     const text = await res.text();
     try {
       return { status: 'ok', data: JSON.parse(text) as T };
-    } catch {
-      return { status: 'ok', data: text as unknown as T };
+    } catch (e: any) {
+      return { status: 'error', code: res.status, err: e.message, raw: text.slice(0, 100) };
     }
-  } catch {
-    return { status: 'error' };
+  } catch (err: any) {
+    return { status: 'error', err: err.message };
   } finally {
     clearTimeout(timer);
   }
