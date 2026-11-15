@@ -34,6 +34,9 @@ import {
   Lock,
   ShieldCheck,
   ArrowRight,
+  Lightbulb,
+  Sliders,
+  Volume2,
 } from 'lucide-react';
 import { ProfileData, SocialLink, Badge, ThemeConfig, AvatarDecoration, AuthUser } from '@/types/profile';
 import ProfileView from './ProfileView';
@@ -1600,6 +1603,145 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                       />
                       <span>Crosshair Cursor (เมาส์พิเศษ)</span>
                     </label>
+                  </div>
+
+                  {/* 4. เอฟเฟกต์เสริม (Appearance Toggles - yura.lol style) */}
+                  <div className="p-4 sm:p-5 rounded-2xl border border-white/10 bg-[#121319] space-y-4">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]" />
+                      <h3 className="text-sm font-bold text-white tracking-wide">เอฟเฟกต์เสริม (Appearance Effects)</h3>
+                    </div>
+                    <p className="text-xs text-white/50">เปิด/ปิดแอนิเมชันและการตอบสนองพิเศษของโปรไฟล์</p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      {/* Toggle: แอนิเมชันยอดเข้าชม */}
+                      <div className="px-4 py-3 rounded-2xl border border-white/10 bg-[#14151b] hover:border-white/20 transition-all flex items-center justify-between shadow-lg">
+                        <div className="flex items-center gap-3">
+                          <Eye className="w-5 h-5 text-emerald-400 drop-shadow-[0_0_8px_#10b981]" />
+                          <span className="text-xs sm:text-sm font-bold text-white tracking-wide">แอนิเมชันยอดเข้าชม</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setProfile((prev) => ({
+                              ...prev,
+                              theme: {
+                                ...prev.theme,
+                                extraEffects: {
+                                  ...(prev.theme.extraEffects || {}),
+                                  viewsAnimation: !prev.theme.extraEffects?.viewsAnimation,
+                                },
+                              },
+                            }))
+                          }
+                          className={`w-12 h-6 rounded-full transition-colors duration-200 relative flex items-center px-0.5 cursor-pointer ${
+                            profile.theme.extraEffects?.viewsAnimation ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]' : 'bg-white/15'
+                          }`}
+                        >
+                          <div
+                            className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
+                              profile.theme.extraEffects?.viewsAnimation ? 'translate-x-6' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Toggle: ไอคอนเรืองแสง */}
+                      <div className="px-4 py-3 rounded-2xl border border-white/10 bg-[#14151b] hover:border-white/20 transition-all flex items-center justify-between shadow-lg">
+                        <div className="flex items-center gap-3">
+                          <Lightbulb className="w-5 h-5 text-emerald-400 drop-shadow-[0_0_8px_#10b981]" />
+                          <span className="text-xs sm:text-sm font-bold text-white tracking-wide">ไอคอนเรืองแสง</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setProfile((prev) => ({
+                              ...prev,
+                              theme: {
+                                ...prev.theme,
+                                extraEffects: {
+                                  ...(prev.theme.extraEffects || {}),
+                                  glowIcons: prev.theme.extraEffects?.glowIcons === false ? true : false,
+                                },
+                              },
+                            }))
+                          }
+                          className={`w-12 h-6 rounded-full transition-colors duration-200 relative flex items-center px-0.5 cursor-pointer ${
+                            profile.theme.extraEffects?.glowIcons !== false ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]' : 'bg-white/15'
+                          }`}
+                        >
+                          <div
+                            className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
+                              profile.theme.extraEffects?.glowIcons !== false ? 'translate-x-6' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Toggle: การ์ดเอียงตามเมาส์ */}
+                      <div className="px-4 py-3 rounded-2xl border border-white/10 bg-[#14151b] hover:border-white/20 transition-all flex items-center justify-between shadow-lg">
+                        <div className="flex items-center gap-3">
+                          <Sliders className="w-5 h-5 text-emerald-400 drop-shadow-[0_0_8px_#10b981]" />
+                          <span className="text-xs sm:text-sm font-bold text-white tracking-wide">การ์ดเอียงตามเมาส์</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setProfile((prev) => ({
+                              ...prev,
+                              theme: {
+                                ...prev.theme,
+                                extraEffects: {
+                                  ...(prev.theme.extraEffects || {}),
+                                  cardTilt: !prev.theme.extraEffects?.cardTilt,
+                                },
+                              },
+                            }))
+                          }
+                          className={`w-12 h-6 rounded-full transition-colors duration-200 relative flex items-center px-0.5 cursor-pointer ${
+                            profile.theme.extraEffects?.cardTilt ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]' : 'bg-white/15'
+                          }`}
+                        >
+                          <div
+                            className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
+                              profile.theme.extraEffects?.cardTilt ? 'translate-x-6' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Toggle: แสงวิ่งตามขอบ */}
+                      <div className="px-4 py-3 rounded-2xl border border-white/10 bg-[#14151b] hover:border-white/20 transition-all flex items-center justify-between shadow-lg">
+                        <div className="flex items-center gap-3">
+                          <Flame className="w-5 h-5 text-emerald-400 drop-shadow-[0_0_8px_#10b981]" />
+                          <span className="text-xs sm:text-sm font-bold text-white tracking-wide">แสงวิ่งตามขอบ</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setProfile((prev) => ({
+                              ...prev,
+                              theme: {
+                                ...prev.theme,
+                                extraEffects: {
+                                  ...(prev.theme.extraEffects || {}),
+                                  borderBeam: !prev.theme.extraEffects?.borderBeam,
+                                },
+                              },
+                            }))
+                          }
+                          className={`w-12 h-6 rounded-full transition-colors duration-200 relative flex items-center px-0.5 cursor-pointer ${
+                            profile.theme.extraEffects?.borderBeam ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]' : 'bg-white/15'
+                          }`}
+                        >
+                          <div
+                            className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
+                              profile.theme.extraEffects?.borderBeam ? 'translate-x-6' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Save Button for Background */}

@@ -15,6 +15,7 @@ import {
   Check,
   X,
   Zap,
+  Lightbulb,
 } from 'lucide-react';
 import { ProfileData, ExtraEffectsConfig } from '@/types/profile';
 
@@ -341,117 +342,108 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
           </button>
         </div>
 
-        {/* Toggles Row 1 */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          {/* Toggle: แอนิเมชันยอดเข้าชม */}
-          <div className="p-3.5 rounded-2xl border border-white/10 bg-white/[0.02] flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <Eye className="w-4 h-4 text-white/60" />
-              <span className="text-xs text-white/90">แอนิเมชันยอดเข้าชม</span>
+        {/* Toggles Grid - Matching yura.lol aesthetic */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+          {/* Toggle 1: แอนิเมชันยอดเข้าชม */}
+          <div className="px-4 py-3 rounded-2xl border border-white/10 bg-[#14151b] hover:border-white/20 transition-all flex items-center justify-between shadow-lg">
+            <div className="flex items-center gap-3">
+              <Eye className="w-5 h-5 text-emerald-400 drop-shadow-[0_0_8px_#10b981]" />
+              <span className="text-xs sm:text-sm font-bold text-white tracking-wide">แอนิเมชันยอดเข้าชม</span>
             </div>
             <button
               type="button"
               onClick={() => updateEffects({ viewsAnimation: !currentEffects.viewsAnimation })}
-              className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-0.5 cursor-pointer ${
-                currentEffects.viewsAnimation ? 'bg-emerald-500' : 'bg-white/15'
+              className={`w-12 h-6 rounded-full transition-colors duration-200 relative flex items-center px-0.5 cursor-pointer ${
+                currentEffects.viewsAnimation ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]' : 'bg-white/15'
               }`}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                  currentEffects.viewsAnimation ? 'translate-x-5' : 'translate-x-0'
+                className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
+                  currentEffects.viewsAnimation ? 'translate-x-6' : 'translate-x-0'
                 }`}
               />
             </button>
           </div>
 
-          {/* Toggle: การ์ดเอียงตามเมาส์ */}
-          <div className="p-3.5 rounded-2xl border border-white/10 bg-white/[0.02] flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <Sliders className="w-4 h-4 text-white/60" />
-              <span className="text-xs text-white/90">การ์ดเอียงตามเมาส์</span>
+          {/* Toggle 2: การ์ดเอียงตามเมาส์ */}
+          <div className="px-4 py-3 rounded-2xl border border-white/10 bg-[#14151b] hover:border-white/20 transition-all flex items-center justify-between shadow-lg">
+            <div className="flex items-center gap-3">
+              <Sliders className="w-5 h-5 text-emerald-400 drop-shadow-[0_0_8px_#10b981]" />
+              <span className="text-xs sm:text-sm font-bold text-white tracking-wide">การ์ดเอียงตามเมาส์</span>
             </div>
             <button
               type="button"
               onClick={() => updateEffects({ cardTilt: !currentEffects.cardTilt })}
-              className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-0.5 cursor-pointer ${
-                currentEffects.cardTilt ? 'bg-emerald-500' : 'bg-white/15'
+              className={`w-12 h-6 rounded-full transition-colors duration-200 relative flex items-center px-0.5 cursor-pointer ${
+                currentEffects.cardTilt ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]' : 'bg-white/15'
               }`}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                  currentEffects.cardTilt ? 'translate-x-5' : 'translate-x-0'
+                className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
+                  currentEffects.cardTilt ? 'translate-x-6' : 'translate-x-0'
                 }`}
               />
             </button>
           </div>
 
-          {/* Toggle: ไอคอนเรืองแสง */}
-          <div className="p-3.5 rounded-2xl border border-white/10 bg-white/[0.02] flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <Zap className="w-4 h-4 text-emerald-400" />
-              <span className="text-xs text-white/90">ไอคอนเรืองแสง</span>
+          {/* Toggle 3: ไอคอนเรืองแสง */}
+          <div className="px-4 py-3 rounded-2xl border border-white/10 bg-[#14151b] hover:border-white/20 transition-all flex items-center justify-between shadow-lg">
+            <div className="flex items-center gap-3">
+              <Lightbulb className="w-5 h-5 text-emerald-400 drop-shadow-[0_0_8px_#10b981]" />
+              <span className="text-xs sm:text-sm font-bold text-white tracking-wide">ไอคอนเรืองแสง</span>
             </div>
             <button
               type="button"
               onClick={() => updateEffects({ glowIcons: currentEffects.glowIcons === false ? true : false })}
-              className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-0.5 cursor-pointer ${
-                currentEffects.glowIcons !== false ? 'bg-emerald-500' : 'bg-white/15'
+              className={`w-12 h-6 rounded-full transition-colors duration-200 relative flex items-center px-0.5 cursor-pointer ${
+                currentEffects.glowIcons !== false ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]' : 'bg-white/15'
               }`}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                  currentEffects.glowIcons !== false ? 'translate-x-5' : 'translate-x-0'
+                className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
+                  currentEffects.glowIcons !== false ? 'translate-x-6' : 'translate-x-0'
                 }`}
               />
             </button>
           </div>
-        </div>
 
-        {/* Toggles Row 2 (แสงวิ่งตามขอบ, วิชวลไลเซอร์เสียง) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          {/* Toggle: แสงวิ่งตามขอบ */}
-          <div className="p-3.5 rounded-2xl border border-white/10 bg-white/[0.02] flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <Flame className="w-4 h-4 text-emerald-400" />
-              <div className="text-xs text-white/90 flex items-center gap-1.5">
-                <span className="text-emerald-400 text-xs">✨</span>
-                <span>แสงวิ่งตามขอบ</span>
-              </div>
+          {/* Toggle 4: แสงวิ่งตามขอบ */}
+          <div className="px-4 py-3 rounded-2xl border border-white/10 bg-[#14151b] hover:border-white/20 transition-all flex items-center justify-between shadow-lg">
+            <div className="flex items-center gap-3">
+              <Flame className="w-5 h-5 text-emerald-400 drop-shadow-[0_0_8px_#10b981]" />
+              <span className="text-xs sm:text-sm font-bold text-white tracking-wide">แสงวิ่งตามขอบ</span>
             </div>
             <button
               type="button"
               onClick={() => updateEffects({ borderBeam: !currentEffects.borderBeam })}
-              className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-0.5 cursor-pointer ${
-                currentEffects.borderBeam ? 'bg-emerald-500' : 'bg-white/15'
+              className={`w-12 h-6 rounded-full transition-colors duration-200 relative flex items-center px-0.5 cursor-pointer ${
+                currentEffects.borderBeam ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]' : 'bg-white/15'
               }`}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                  currentEffects.borderBeam ? 'translate-x-5' : 'translate-x-0'
+                className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
+                  currentEffects.borderBeam ? 'translate-x-6' : 'translate-x-0'
                 }`}
               />
             </button>
           </div>
 
-          {/* Toggle: วิชวลไลเซอร์เสียง */}
-          <div className="p-3.5 rounded-2xl border border-white/10 bg-white/[0.02] flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <Volume2 className="w-4 h-4 text-emerald-400" />
-              <div className="text-xs text-white/90 flex items-center gap-1.5">
-                <span className="text-emerald-400 text-xs">✨</span>
-                <span>วิชวลไลเซอร์เสียง</span>
-              </div>
+          {/* Toggle 5: วิชวลไลเซอร์เสียง */}
+          <div className="px-4 py-3 rounded-2xl border border-white/10 bg-[#14151b] hover:border-white/20 transition-all flex items-center justify-between shadow-lg">
+            <div className="flex items-center gap-3">
+              <Volume2 className="w-5 h-5 text-emerald-400 drop-shadow-[0_0_8px_#10b981]" />
+              <span className="text-xs sm:text-sm font-bold text-white tracking-wide">วิชวลไลเซอร์เสียง</span>
             </div>
             <button
               type="button"
               onClick={() => updateEffects({ audioVisualizer: !currentEffects.audioVisualizer })}
-              className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-0.5 cursor-pointer ${
-                currentEffects.audioVisualizer ? 'bg-emerald-500' : 'bg-white/15'
+              className={`w-12 h-6 rounded-full transition-colors duration-200 relative flex items-center px-0.5 cursor-pointer ${
+                currentEffects.audioVisualizer ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]' : 'bg-white/15'
               }`}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                  currentEffects.audioVisualizer ? 'translate-x-5' : 'translate-x-0'
+                className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
+                  currentEffects.audioVisualizer ? 'translate-x-6' : 'translate-x-0'
                 }`}
               />
             </button>
