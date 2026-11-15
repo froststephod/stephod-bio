@@ -28,7 +28,7 @@ interface Props {
 
 // 28 Name Effects
 const NAME_EFFECTS_LIST = [
-  { id: 'typewriter', name: 'Typewriter|', sub: 'รองรับหลายคำ', tag: 'typewriter' },
+  { id: 'typewriter', name: 'Typewriter', sub: 'รองรับหลายคำ', tag: 'typewriter' },
   { id: 'morph', name: 'Morph', sub: 'รองรับหลายคำ', tag: 'morph', isVip: true },
   { id: 'cherry-blossoms', name: 'Cherry Blossoms', sub: 'กลีบซากุระร่วง', tag: 'cherry', isVip: true, icon: '🌸' },
   { id: 'shimmer', name: 'Shimmer', sub: 'แสงเงาวิ่งผ่าน', tag: 'shimmer', isVip: true },
@@ -60,7 +60,7 @@ const NAME_EFFECTS_LIST = [
 
 // 12 Bio Effects
 const BIO_EFFECTS_LIST = [
-  { id: 'typewriter', name: 'Typewriter|', sub: 'รองรับหลายคำ', tag: 'typewriter' },
+  { id: 'typewriter', name: 'Typewriter', sub: 'รองรับหลายคำ', tag: 'typewriter' },
   { id: 'morph', name: 'Morph', sub: 'รองรับหลายคำ', tag: 'morph', isVip: true },
   { id: 'shimmer', name: 'Shimmer', sub: 'แสงเงาวิ่งผ่าน', tag: 'shimmer', isVip: true },
   { id: 'shine', name: 'Shine', sub: 'วิบวับเปล่งประกาย', tag: 'shine', isVip: true },
@@ -475,7 +475,14 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
                           isSelected ? 'text-emerald-300' : 'text-white/90 group-hover:text-white'
                         }`}
                       >
-                        {eff.name}
+                        {eff.id === 'typewriter' ? (
+                          <span className="inline-flex items-center">
+                            <span>Typewriter</span>
+                            <span className="w-1.5 h-3.5 ml-1 inline-block bg-current animate-pulse rounded-[1px] shadow-[0_0_6px_currentColor]" />
+                          </span>
+                        ) : (
+                          eff.name
+                        )}
                       </div>
                       <div className="text-[10px] text-white/40 mt-0.5">{eff.sub}</div>
                     </button>
@@ -555,7 +562,14 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
                           isSelected ? 'text-emerald-300' : 'text-white/90 group-hover:text-white'
                         }`}
                       >
-                        {eff.name}
+                        {eff.id === 'typewriter' ? (
+                          <span className="inline-flex items-center">
+                            <span>Typewriter</span>
+                            <span className="w-1.5 h-3.5 ml-1 inline-block bg-current animate-pulse rounded-[1px] shadow-[0_0_6px_currentColor]" />
+                          </span>
+                        ) : (
+                          eff.name
+                        )}
                       </div>
                       <div className="text-[10px] text-white/40 mt-0.5">{eff.sub}</div>
                     </button>

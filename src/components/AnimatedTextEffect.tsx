@@ -221,7 +221,11 @@ export default function AnimatedTextEffect({
       )}
 
       <span>{displayText}</span>
-      {hasTypewriter && <span className="animate-pulse text-emerald-400 font-mono font-bold">|</span>}
+      {hasTypewriter && (
+        <span
+          className="w-2 h-[1em] ml-1 inline-block align-middle animate-pulse bg-current rounded-[1px] shadow-[0_0_8px_currentColor]"
+        />
+      )}
       {hasLoading && <span className="font-mono text-cyan-400">{dots}</span>}
     </Component>
   );
