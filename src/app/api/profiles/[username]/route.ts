@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getProfileAsync, incrementViews } from '@/lib/storage';
-import { readChunkMeta } from '@/lib/cloud-kv';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -13,16 +12,10 @@ export async function GET(
     const { username } = params;
     const profile = await getProfileAsync(username);
     if (!profile) {
-      const meta = await readChunkMeta(`pf_${username.toLowerCase()}`);
-      return NextResponse.json({
-        success: false,
-        error: 'Profile not found',
-        debug: {
-          username,
-          meta,
-          activeToken: process.env.CLOUD_DB_TOKEN ? 'env-set' : 'default',
-        },
-      }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: 'Profile not found' },
+        { status: 404 }
+      );
     }
 
     // Check query params if should increment view

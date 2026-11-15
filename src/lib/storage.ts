@@ -3,19 +3,7 @@ import path from 'path';
 import { ProfileData } from '@/types/profile';
 import { saveChunkedDoc, loadChunkedDoc, tombstoneChunkedDoc, kvRead, kvSet, kvDelete } from './cloud-kv';
 
-const CLOUD_DB_TOKEN =
-  process.env.CLOUD_DB_TOKEN && process.env.CLOUD_DB_TOKEN !== 'MQtLVyembPnxdpR74HeB'
-    ? process.env.CLOUD_DB_TOKEN
-    : 'xCHpEi1b8zIMkMxCXhBj';
-const CLOUD_DB_BASE = 'https://api.echovalue.dev/kv/default';
 
-const DEFAULT_HEADERS: Record<string, string> = {
-  'User-Agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-  'Accept': 'application/json, text/plain, */*',
-  'Accept-Language': 'en-US,en;q=0.9',
-  'Referer': 'https://stephod.vercel.app/',
-};
 
 export const DEFAULT_PROFILES: Record<string, ProfileData> = {};
 
@@ -85,70 +73,15 @@ function persistProfiles() {
   }
 }
 
-// Fetch from Cloud KV (multi-chunk reconstruction)
+// Fetch from Cloud KV
 export async function fetchProfileFromCloud(username: string): Promise<ProfileData | null> {
   const key = username.toLowerCase().trim();
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2000);
-
-    const [rBasic, rUrls, rTheme, rSocial] = await Promise.all([
-      fetch(`${CLOUD_DB_BASE}/p_basic_${key}`, {
-        headers: { ...DEFAULT_HEADERS, 'x-token': CLOUD_DB_TOKEN },
-        signal: controller.signal,
-        cache: 'no-store',
-      }),
-      fetch(`${CLOUD_DB_BASE}/p_urls_${key}`, {
-        headers: { ...DEFAULT_HEADERS, 'x-token': CLOUD_DB_TOKEN },
-        signal: controller.signal,
-        cache: 'no-store',
-      }),
-      fetch(`${CLOUD_DB_BASE}/p_theme_${key}`, {
-        headers: { ...DEFAULT_HEADERS, 'x-token': CLOUD_DB_TOKEN },
-        signal: controller.signal,
-        cache: 'no-store',
-      }),
-      fetch(`${CLOUD_DB_BASE}/p_social_${key}`, {
-        headers: { ...DEFAULT_HEADERS, 'x-token': CLOUD_DB_TOKEN },
-        signal: controller.signal,
-        cache: 'no-store',
-      }),
-    ]);
-
-    clearTimeout(timeout);
-
-    if (!rBasic.ok) return null;
-
-    const basic = await rBasic.json();
-    if (!basic || !basic.username) return null;
-
-    let urls: any = {};
-    let themeData: any = {};
-    let social: any = {};
-
-    if (rUrls.ok) try { urls = await rUrls.json(); } catch {}
-    if (rTheme.ok) try { themeData = await rTheme.json(); } catch {}
-    if (rSocial.ok) try { social = await rSocial.json(); } catch {}
-
-    const merged: ProfileData = {
-      ...basic,
-      avatarUrl: urls.avatarUrl || basic.avatarUrl || '',
-      bannerUrl: urls.bannerUrl || basic.bannerUrl || '',
-      avatarDecoration: urls.avatarDecoration || basic.avatarDecoration,
-      theme: themeData.theme || basic.theme || { accentColor: '#10b981' },
-      audio: themeData.audio || basic.audio,
-      discordWidget: themeData.discordWidget || basic.discordWidget,
-      badges: social.badges || basic.badges || [],
-      socialLinks: social.socialLinks || basic.socialLinks || [],
-      views: social.views ?? basic.views ?? 0,
-      likes: social.likes ?? basic.likes ?? 0,
-    };
-
-    inMemoryProfiles[key] = merged;
-    return merged;
-  } catch (err) {
-    return null;
+  const loaded = await loadChunkedDoc<ProfileData>(`pf_${key}`);
+  if (loaded.state === 'ok' && loaded.doc) {
+    inMemoryProfiles[key] = loaded.doc;
+    return loaded.doc;
   }
+  return null;
 }
 
 // ---------------------------------------------------------------------------

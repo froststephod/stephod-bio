@@ -1,6 +1,6 @@
 import { createHash, createHmac, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import type { NextRequest } from 'next/server';
-import { kvDelete, kvRead, kvSet, readChunkMeta } from './cloud-kv';
+import { kvDelete, kvRead, kvSet, readChunkMeta, getAllKnownUsernames } from './cloud-kv';
 import {
   DEFAULT_PROFILES,
   deleteProfileFromCloud,
@@ -377,13 +377,16 @@ export interface UserRow {
 }
 
 export async function listUsers(): Promise<{ users: UserRow[]; indexComplete: boolean }> {
-  const idx = await readUserIndex();
+  const [idx, storeUsernames] = await Promise.all([
+    readUserIndex(),
+    getAllKnownUsernames(),
+  ]);
   const authNames = getAllAccountUsernames();
   const inMemoryNames = Object.keys(getAllProfiles());
   const defaultNames = Object.keys(DEFAULT_PROFILES);
 
   const names = Array.from(
-    new Set([...idx.names, ...authNames, ...inMemoryNames, ...defaultNames])
+    new Set([...idx.names, ...authNames, ...inMemoryNames, ...defaultNames, ...storeUsernames])
   );
 
   const rows: UserRow[] = [];
