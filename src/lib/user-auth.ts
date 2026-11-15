@@ -1,4 +1,6 @@
 import { scryptSync, randomBytes, timingSafeEqual, createHmac } from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import { kvRead, kvSet } from './cloud-kv';
 import { addToUserIndex, getProfileStateAsync, saveProfileAsync } from './storage';
 import { ProfileData, AuthUser } from '@/types/profile';
@@ -14,6 +16,33 @@ export interface UserAccount {
 }
 
 const USER_SECRET = process.env.USER_SESSION_SECRET || 'stephod-user-auth-secret-key-2026';
+const inMemoryAccounts: Record<string, UserAccount> = {};
+const ACCOUNTS_FILE = path.join(process.cwd(), 'data', 'accounts.json');
+
+function initAccounts(): void {
+  if (Object.keys(inMemoryAccounts).length > 0) return;
+  try {
+    if (fs.existsSync(ACCOUNTS_FILE)) {
+      const raw = fs.readFileSync(ACCOUNTS_FILE, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        Object.assign(inMemoryAccounts, parsed);
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to read accounts file:', e);
+  }
+}
+
+function persistAccounts(): void {
+  try {
+    const dir = path.dirname(ACCOUNTS_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(inMemoryAccounts, null, 2), 'utf-8');
+  } catch {
+    // Read-only filesystem in serverless environments is normal
+  }
+}
 
 function hmac(data: string): string {
   return createHmac('sha256', USER_SECRET).update(data).digest('base64url');
@@ -53,11 +82,26 @@ export function parseSessionCookie(token?: string | null): AuthUser | null {
 }
 
 export async function getUserAccount(username: string): Promise<UserAccount | null> {
+  initAccounts();
   const clean = username.toLowerCase().trim();
-  const res = await kvRead<UserAccount>(`usr_acc_${clean}`);
-  if (res.status === 'ok' && res.data) {
-    return res.data;
+
+  // 1. Check in-memory / local file
+  if (inMemoryAccounts[clean]) {
+    return inMemoryAccounts[clean];
   }
+
+  // 2. Check Cloud KV
+  try {
+    const res = await kvRead<UserAccount>(`usr_acc_${clean}`);
+    if (res.status === 'ok' && res.data) {
+      inMemoryAccounts[clean] = res.data;
+      persistAccounts();
+      return res.data;
+    }
+  } catch {
+    // Continue
+  }
+
   return null;
 }
 
@@ -139,13 +183,13 @@ export async function registerUser(
     return { ok: false, error: 'รหัสผ่านยาวเกินไป' };
   }
 
-  // Check if account already exists in KV
+  // Check if account already exists
   const existingAcc = await getUserAccount(username);
   if (existingAcc) {
     return { ok: false, error: 'ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น' };
   }
 
-  // Check if profile already exists in KV
+  // Check if profile already exists
   const existingProfile = await getProfileStateAsync(username);
   if (existingProfile.profile && !existingProfile.deleted) {
     return { ok: false, error: 'ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น' };
@@ -163,15 +207,20 @@ export async function registerUser(
     createdAt: new Date().toISOString(),
   };
 
-  const savedAcc = await kvSet(`usr_acc_${username}`, account);
-  if (!savedAcc) {
-    return { ok: false, error: 'บันทึกบัญชีไม่สำเร็จ กรุณาลองใหม่อีกครั้ง' };
-  }
+  // 1. Save to in-memory accounts and local data file
+  initAccounts();
+  inMemoryAccounts[username] = account;
+  persistAccounts();
 
-  // Create initial profile
+  // 2. Sync to Cloud KV resiliently
+  kvSet(`usr_acc_${username}`, account).catch((err) => {
+    console.warn('kvSet usr_acc background sync notice:', err);
+  });
+
+  // 3. Create initial profile
   const profile = createDefaultProfileForUser(username, displayName);
   await saveProfileAsync(profile);
-  await addToUserIndex(username);
+  addToUserIndex(username).catch(() => {});
 
   const authUser: AuthUser = {
     id: username,

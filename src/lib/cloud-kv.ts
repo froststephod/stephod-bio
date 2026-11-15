@@ -6,7 +6,7 @@
  * Set CLOUD_DB_TOKEN in the hosting environment (do not rely on the fallback).
  */
 const CLOUD_DB_BASE = process.env.CLOUD_DB_BASE || 'https://api.echovalue.dev/kv/default';
-const CLOUD_DB_TOKEN = process.env.CLOUD_DB_TOKEN || 'MQtLVyembPnxdpR74HeB';
+const CLOUD_DB_TOKEN = process.env.CLOUD_DB_TOKEN || 'xCHpEi1b8zIMkMxCXhBj';
 
 const MAX_BODY_BYTES = 980;
 const MAX_CHUNKS = 24;
