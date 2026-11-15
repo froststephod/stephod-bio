@@ -2,9 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import { ProfileData } from '@/types/profile';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const DATA_FILE = path.join(DATA_DIR, 'profiles.json');
-
 export const DEFAULT_PROFILES: Record<string, ProfileData> = {
   pun: {
     username: 'pun',
@@ -123,37 +120,75 @@ export const DEFAULT_PROFILES: Record<string, ProfileData> = {
   },
 };
 
-function ensureDataFile() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+// Global in-memory cache to guarantee zero-crash execution in any runtime (Vercel Serverless / Lambda / Local)
+let inMemoryProfiles: Record<string, ProfileData> = { ...DEFAULT_PROFILES };
+let initialized = false;
+
+function getStorageFilePath(): string {
+  // If running on Vercel or Lambda serverless, write to /tmp
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    return path.join('/tmp', 'profiles.json');
   }
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(DEFAULT_PROFILES, null, 2), 'utf-8');
+  return path.join(process.cwd(), 'data', 'profiles.json');
+}
+
+function initProfiles() {
+  if (initialized) return;
+  initialized = true;
+
+  try {
+    const filePath = getStorageFilePath();
+    if (fs.existsSync(filePath)) {
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      inMemoryProfiles = { ...DEFAULT_PROFILES, ...JSON.parse(raw) };
+      return;
+    }
+
+    // Check project data folder for initial seed
+    const seedPath = path.join(process.cwd(), 'data', 'profiles.json');
+    if (fs.existsSync(seedPath)) {
+      try {
+        const seedRaw = fs.readFileSync(seedPath, 'utf-8');
+        inMemoryProfiles = { ...DEFAULT_PROFILES, ...JSON.parse(seedRaw) };
+      } catch {}
+    }
+
+    // Try to write initial copy to writable location (safe try-catch)
+    persistProfiles();
+  } catch (err) {
+    console.warn('Storage init note (using in-memory fallback):', err);
+  }
+}
+
+function persistProfiles() {
+  try {
+    const filePath = getStorageFilePath();
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(filePath, JSON.stringify(inMemoryProfiles, null, 2), 'utf-8');
+  } catch (err) {
+    // If filesystem is read-only, safely retain state in memory
+    console.warn('Storage persist note (data retained in memory):', err);
   }
 }
 
 export function getAllProfiles(): Record<string, ProfileData> {
-  ensureDataFile();
-  try {
-    const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-    return JSON.parse(raw);
-  } catch (e) {
-    console.error('Error reading profiles file:', e);
-    return DEFAULT_PROFILES;
-  }
+  initProfiles();
+  return inMemoryProfiles;
 }
 
 export function getProfile(username: string): ProfileData | null {
-  const profiles = getAllProfiles();
+  initProfiles();
   const key = username.toLowerCase().trim();
-  return profiles[key] || null;
+  return inMemoryProfiles[key] || null;
 }
 
 export function saveProfile(profile: ProfileData): ProfileData {
-  ensureDataFile();
-  const profiles = getAllProfiles();
+  initProfiles();
   const key = profile.username.toLowerCase().trim();
-  const existing = profiles[key];
+  const existing = inMemoryProfiles[key];
 
   const updated: ProfileData = {
     ...profile,
@@ -164,31 +199,29 @@ export function saveProfile(profile: ProfileData): ProfileData {
     updatedAt: new Date().toISOString(),
   };
 
-  profiles[key] = updated;
-  fs.writeFileSync(DATA_FILE, JSON.stringify(profiles, null, 2), 'utf-8');
+  inMemoryProfiles[key] = updated;
+  persistProfiles();
   return updated;
 }
 
 export function incrementViews(username: string): number {
-  ensureDataFile();
-  const profiles = getAllProfiles();
+  initProfiles();
   const key = username.toLowerCase().trim();
-  if (profiles[key]) {
-    profiles[key].views = (profiles[key].views || 0) + 1;
-    fs.writeFileSync(DATA_FILE, JSON.stringify(profiles, null, 2), 'utf-8');
-    return profiles[key].views;
+  if (inMemoryProfiles[key]) {
+    inMemoryProfiles[key].views = (inMemoryProfiles[key].views || 0) + 1;
+    persistProfiles();
+    return inMemoryProfiles[key].views;
   }
   return 0;
 }
 
 export function incrementLikes(username: string): number {
-  ensureDataFile();
-  const profiles = getAllProfiles();
+  initProfiles();
   const key = username.toLowerCase().trim();
-  if (profiles[key]) {
-    profiles[key].likes = (profiles[key].likes || 0) + 1;
-    fs.writeFileSync(DATA_FILE, JSON.stringify(profiles, null, 2), 'utf-8');
-    return profiles[key].likes;
+  if (inMemoryProfiles[key]) {
+    inMemoryProfiles[key].likes = (inMemoryProfiles[key].likes || 0) + 1;
+    persistProfiles();
+    return inMemoryProfiles[key].likes;
   }
   return 0;
 }
