@@ -43,12 +43,14 @@ import FontPickerDropdown from './FontPickerDropdown';
 import DiscordLoginScreen from './DiscordLoginScreen';
 import { getSpotifyInfo, fetchSpotifyOEmbed } from '@/lib/music';
 import { siteConfig } from '@/config/site';
+import ExtraEffectsView from './ExtraEffectsView';
 
 type TabType =
   | 'overview'
   | 'shop'
   | 'profile'
   | 'theme'
+  | 'effects'
   | 'links'
   | 'badges'
   | 'discord'
@@ -459,6 +461,7 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
               {[
                 { id: 'profile', label: 'โปรไฟล์', icon: User },
                 { id: 'theme', label: 'หน้าตา', icon: Palette },
+                { id: 'effects', label: 'เอฟเฟกต์เสริม', icon: Sparkles },
                 { id: 'links', label: 'ลิงก์', icon: Share2 },
                 { id: 'badges', label: 'ตราสัญลักษณ์', icon: Shield },
                 { id: 'discord', label: 'วิดเจ็ต', icon: Puzzle },
@@ -561,6 +564,7 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
               {activeTab === 'overview' && '📊 ภาพรวม (Overview)'}
               {activeTab === 'profile' && '👤 ปรับแต่งโปรไฟล์ (Profile)'}
               {activeTab === 'theme' && '🎨 หน้าตา & สไตล์ (Theme & Style)'}
+              {activeTab === 'effects' && '✨ เอฟเฟกต์เสริม (Effects)'}
               {activeTab === 'links' && '🔗 ลิงก์โซเชียลมีเดีย (Links)'}
               {activeTab === 'badges' && '🛡️ ตราสัญลักษณ์ (Badges)'}
               {activeTab === 'discord' && '🧩 วิดเจ็ต Discord (Widgets)'}
@@ -1515,6 +1519,16 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                   </button>
                 </div>
               </div>
+            )}
+
+            {/* 2.5 Extra Effects Tab (✨ เอฟเฟกต์เสริม) */}
+            {activeTab === 'effects' && (
+              <ExtraEffectsView
+                profile={profile}
+                onUpdateProfile={setProfile}
+                onSave={handleSave}
+                saving={saving}
+              />
             )}
 
             {/* 3. Audio & Music Tab */}

@@ -13,6 +13,20 @@ export interface Badge {
   color?: string;
 }
 
+export interface ExtraEffectsConfig {
+  nameEffects?: string[]; // e.g. ['typewriter', 'glow'] (up to 3)
+  bioEffects?: string[]; // e.g. ['typewriter', 'shimmer']
+  pageOverlay?: 'none' | 'scanlines' | 'vhs' | 'noise' | 'vignette' | 'grid';
+  cursorTrail?: 'none' | 'sparkles' | 'hearts' | 'bubbles' | 'stars' | 'smoke';
+  bgEffect?: 'none' | 'shooting-stars' | 'fog-waves' | 'sakura' | 'digital-rain';
+  entranceAnimation?: 'none' | 'fade-in' | 'zoom' | 'drop' | 'slide-up' | 'flip';
+  viewsAnimation?: boolean; // แอนิเมชันยอดเข้าชม
+  cardTilt?: boolean; // การ์ดเอียงตามเมาส์
+  glowIcons?: boolean; // ไอคอนเรืองแสง
+  borderBeam?: boolean; // แสงวิ่งตามขอบ
+  audioVisualizer?: boolean; // วิชวลไลเซอร์เสียง
+}
+
 export interface ThemeConfig {
   accentColor: string; // Hex e.g. #a855f7
   glowColor: string;
@@ -37,6 +51,9 @@ export interface ThemeConfig {
   nameFont?: string;
   textFont?: string;
   customCss?: string;
+
+  // Extra Effects (เอฟเฟกต์เสริม)
+  extraEffects?: ExtraEffectsConfig;
 }
 
 export interface AudioConfig {

@@ -13,6 +13,7 @@ import AvatarWithDecoration from './AvatarWithDecoration';
 import { getSpotifyInfo } from '@/lib/music';
 import { siteConfig } from '@/config/site';
 import { getFontCssFamily } from '@/lib/fonts';
+import AnimatedTextEffect from './AnimatedTextEffect';
 
 interface Props {
   profile: ProfileData;
@@ -35,6 +36,32 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
   const [showLiveNotification, setShowLiveNotification] = useState(false);
   const [liveNotificationText, setLiveNotificationText] = useState('');
   const lastViewCountRef = useRef(profile.views || 0);
+
+  // 3D Card Tilt state
+  const [tiltStyle, setTiltStyle] = useState<{ transform: string; transition?: string }>({ transform: '' });
+
+  const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!profile.theme.extraEffects?.cardTilt) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((y - centerY) / centerY) * -10;
+    const rotateY = ((x - centerX) / centerX) * 10;
+    setTiltStyle({
+      transform: `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale3d(1.015, 1.015, 1.015)`,
+      transition: 'transform 0.1s ease-out',
+    });
+  };
+
+  const handleCardMouseLeave = () => {
+    if (!profile.theme.extraEffects?.cardTilt) return;
+    setTiltStyle({
+      transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
+      transition: 'transform 0.5s ease-out',
+    });
+  };
 
   // Real-time Heartbeat & Live Visitor Tracking
   useEffect(() => {
@@ -233,6 +260,11 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
       {/* Background Layer */}
       <BackgroundCanvas theme={profile.theme} />
 
+      {/* Page Overlays (Scanlines, VHS, Grid, Vignette) */}
+      {profile.theme.extraEffects?.pageOverlay && profile.theme.extraEffects.pageOverlay !== 'none' && (
+        <div className={`fixed inset-0 pointer-events-none z-10 overlay-${profile.theme.extraEffects.pageOverlay}`} />
+      )}
+
       {/* Click To Enter Splash Screen */}
       {!hasEntered && isClickToEnterEnabled && (
         <div
@@ -273,6 +305,8 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
 
         {/* Card Body */}
         <div
+          onMouseMove={handleCardMouseMove}
+          onMouseLeave={handleCardMouseLeave}
           className={`relative overflow-hidden ${cardBorderClass} transition-all duration-300 ${cornerClass}`}
           style={{
             backgroundColor: isTransparent ? 'transparent' : cardBgColor,
@@ -280,6 +314,7 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
             WebkitBackdropFilter: isTransparent ? 'none' : `blur(${blurPx}px)`,
             ...borderRadiusStyle,
             ...extraCardStyles,
+            ...tiltStyle,
             boxShadow: isTransparent
               ? 'none'
               : profile.theme.glowEffect && cardStyle !== 'neon'
@@ -287,6 +322,12 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
               : extraCardStyles.boxShadow,
           }}
         >
+          {/* Border Beam Laser Animation */}
+          {profile.theme.extraEffects?.borderBeam && (
+            <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[inherit] z-0">
+              <div className="border-beam-element" />
+            </div>
+          )}
           {/* Cyber Accent Lines for cyber cardStyle */}
           {cardStyle === 'cyber' && (
             <>
@@ -346,7 +387,11 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
                     textShadow: isTransparent ? '0 2px 14px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.8)' : undefined,
                   }}
                 >
-                  {profile.displayName || profile.username}
+                  <AnimatedTextEffect
+                    text={profile.displayName || profile.username}
+                    effects={profile.theme.extraEffects?.nameEffects || []}
+                    as="span"
+                  />
                 </h1>
               </div>
 
@@ -404,7 +449,11 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
                     textShadow: isTransparent ? '0 2px 10px rgba(0,0,0,0.95)' : undefined,
                   }}
                 >
-                  {profile.bio}
+                  <AnimatedTextEffect
+                    text={profile.bio}
+                    effects={profile.theme.extraEffects?.bioEffects || []}
+                    as="span"
+                  />
                 </p>
               )}
 
@@ -549,7 +598,11 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
                       textShadow: isTransparent ? '0 2px 14px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.8)' : undefined,
                     }}
                   >
-                    {profile.displayName || profile.username}
+                    <AnimatedTextEffect
+                    text={profile.displayName || profile.username}
+                    effects={profile.theme.extraEffects?.nameEffects || []}
+                    as="span"
+                  />
                   </h1>
 
                   <div className="flex items-center gap-1.5 mt-0.5">
@@ -641,7 +694,11 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
                         textShadow: isTransparent ? '0 2px 10px rgba(0,0,0,0.95)' : undefined,
                       }}
                     >
-                      {profile.bio}
+                                     <AnimatedTextEffect
+                        text={profile.bio}
+                        effects={profile.theme.extraEffects?.bioEffects || []}
+                        as="span"
+                      />
                     </p>
                   )}
 
@@ -740,7 +797,11 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
                         textShadow: isTransparent ? '0 2px 14px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.8)' : undefined,
                       }}
                     >
-                      {profile.displayName || profile.username}
+                      <AnimatedTextEffect
+                    text={profile.displayName || profile.username}
+                    effects={profile.theme.extraEffects?.nameEffects || []}
+                    as="span"
+                  />
                     </h1>
                     <span
                       className="text-[11px] font-mono opacity-50"
@@ -813,7 +874,11 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
                     textShadow: isTransparent ? '0 2px 10px rgba(0,0,0,0.95)' : undefined,
                   }}
                 >
-                  {profile.bio}
+                                 <AnimatedTextEffect
+                        text={profile.bio}
+                        effects={profile.theme.extraEffects?.bioEffects || []}
+                        as="span"
+                      />
                 </p>
               )}
 
