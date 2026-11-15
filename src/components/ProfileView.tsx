@@ -21,7 +21,70 @@ interface Props {
   isPreview?: boolean;
 }
 
-export default function ProfileView({ profile, isPreview = false }: Props) {
+export default function ProfileView({ profile: initialProfile, isPreview = false }: Props) {
+  const [profile, setProfile] = useState<ProfileData>(initialProfile);
+
+  // Sync if prop changes
+  useEffect(() => {
+    setProfile(initialProfile);
+  }, [initialProfile]);
+
+  // Live real-time auto-sync: Tab synchronization & periodic background poll
+  useEffect(() => {
+    if (isPreview) return;
+
+    // A) Listen for localStorage change from Dashboard tab (instant cross-tab sync)
+    const handleStorage = (e: StorageEvent) => {
+      if (
+        e.key === 'stephod_profile_' + profile.username.toLowerCase() ||
+        e.key === 'stephod_profile_sync'
+      ) {
+        try {
+          const raw = localStorage.getItem('stephod_profile_' + profile.username.toLowerCase());
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.username) {
+              setProfile(parsed);
+            }
+          }
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+
+    // B) Re-fetch whenever tab gets focused
+    const syncLatest = async () => {
+      try {
+        const raw = localStorage.getItem('stephod_profile_' + profile.username.toLowerCase());
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.username) {
+            setProfile(parsed);
+          }
+        }
+
+        const res = await fetch(`/api/profiles/${encodeURIComponent(profile.username)}?t=${Date.now()}`, {
+          cache: 'no-store',
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.success && data.profile) {
+            setProfile(data.profile);
+          }
+        }
+      } catch {}
+    };
+
+    window.addEventListener('focus', syncLatest);
+    const interval = setInterval(syncLatest, 4000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('focus', syncLatest);
+      clearInterval(interval);
+    };
+  }, [profile.username, isPreview]);
+
   const isClickToEnterEnabled = profile.theme.clickToEnter !== false; // defaults to true
   const [hasEntered, setHasEntered] = useState(isPreview || !isClickToEnterEnabled);
   const [likes, setLikes] = useState(profile.likes || 0);

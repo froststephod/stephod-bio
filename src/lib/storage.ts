@@ -2,19 +2,25 @@ import fs from 'fs';
 import path from 'path';
 import { ProfileData } from '@/types/profile';
 
+const CLOUD_DB_TOKEN = process.env.CLOUD_DB_TOKEN || 'MQtLVyembPnxdpR74HeB';
+const CLOUD_DB_BASE = 'https://api.echovalue.dev/kv/default';
+
 export const DEFAULT_PROFILES: Record<string, ProfileData> = {
   zrx4r: {
     username: 'zrx4r',
-    displayName: 'zrx4r ⚡',
-    avatarUrl: '/avatars/zrx4r.png',
+    displayName: 'Valen',
+    avatarUrl:
+      'https://media.discordapp.net/attachments/1248927528694059123/1558428669485121639/anime-boy-blue-hair-aesthetic-pfp-43_online-video-cutter.com.gif?ex=6af9d868&is=6af886e8&hm=bfa8a3680e6c556b64d9fb84cf423c92df718361fb5591eb10a2ca575ad8d4f4',
     avatarDecoration: {
-      type: 'none',
+      url: 'https://cdn.discordapp.com/avatar-decoration-presets/a_c3c09bd122898be35093d0d59850f627.png?size=240&passthrough=true',
+      name: 'Soul Leaving Body',
       hue: 0,
       shape: 'circle',
     },
-    bannerUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
-    bio: 'Coding late at night 🌙 • Developer & Gamer • Living in the cyber realm',
-    occupation: 'Gaming Enthusiast',
+    bannerUrl:
+      'https://media.discordapp.net/attachments/1248927528694059121/1562821205976793691/a642950754555de0eadee9dccd258af8_online-video-cutter.com.gif?ex=6af9b4ac&is=6af8632c&hm=56c9b5d4f27894f6bb3ed1092b6f701cfcfa016beccc81a387d52038097f66e5',
+    bio: 'Developer & Gamer',
+    occupation: 'STEPHOAD',
     titles: ['Gaming Enthusiast', 'Cyber Realm', 'Always Online'],
     location: 'Bangkok, Thailand',
     badges: [
@@ -70,7 +76,7 @@ export const DEFAULT_PROFILES: Record<string, ProfileData> = {
       customStatus: 'Online with STEPHOD ⚡',
       customActivity: 'Gaming Enthusiast',
     },
-    views: 124,
+    views: 126,
     likes: 42,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -192,7 +198,7 @@ export const DEFAULT_PROFILES: Record<string, ProfileData> = {
   },
 };
 
-// Global in-memory cache to guarantee zero-crash execution in any runtime (Vercel Serverless / Lambda / Local)
+// Global in-memory cache
 let inMemoryProfiles: Record<string, ProfileData> = { ...DEFAULT_PROFILES };
 let initialized = false;
 
@@ -205,7 +211,6 @@ interface ActiveSession {
 const activeVisitors: Record<string, Record<string, ActiveSession>> = {};
 
 function getStorageFilePath(): string {
-  // If running on Vercel or Lambda serverless, write to /tmp
   if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
     return path.join('/tmp', 'profiles.json');
   }
@@ -224,7 +229,6 @@ function initProfiles() {
       return;
     }
 
-    // Check project data folder for initial seed
     const seedPath = path.join(process.cwd(), 'data', 'profiles.json');
     if (fs.existsSync(seedPath)) {
       try {
@@ -233,10 +237,9 @@ function initProfiles() {
       } catch {}
     }
 
-    // Try to write initial copy to writable location (safe try-catch)
     persistProfiles();
   } catch (err) {
-    console.warn('Storage init note (using in-memory fallback):', err);
+    console.warn('Storage init note:', err);
   }
 }
 
@@ -249,8 +252,134 @@ function persistProfiles() {
     }
     fs.writeFileSync(filePath, JSON.stringify(inMemoryProfiles, null, 2), 'utf-8');
   } catch (err) {
-    // If filesystem is read-only, safely retain state in memory
-    console.warn('Storage persist note (data retained in memory):', err);
+    console.warn('Storage persist note:', err);
+  }
+}
+
+// Fetch from Cloud KV (multi-chunk reconstruction)
+export async function fetchProfileFromCloud(username: string): Promise<ProfileData | null> {
+  const key = username.toLowerCase().trim();
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2000);
+
+    const [rBasic, rUrls, rTheme, rSocial] = await Promise.all([
+      fetch(`${CLOUD_DB_BASE}/p_basic_${key}`, {
+        headers: { 'x-token': CLOUD_DB_TOKEN },
+        signal: controller.signal,
+        cache: 'no-store',
+      }),
+      fetch(`${CLOUD_DB_BASE}/p_urls_${key}`, {
+        headers: { 'x-token': CLOUD_DB_TOKEN },
+        signal: controller.signal,
+        cache: 'no-store',
+      }),
+      fetch(`${CLOUD_DB_BASE}/p_theme_${key}`, {
+        headers: { 'x-token': CLOUD_DB_TOKEN },
+        signal: controller.signal,
+        cache: 'no-store',
+      }),
+      fetch(`${CLOUD_DB_BASE}/p_social_${key}`, {
+        headers: { 'x-token': CLOUD_DB_TOKEN },
+        signal: controller.signal,
+        cache: 'no-store',
+      }),
+    ]);
+
+    clearTimeout(timeout);
+
+    if (!rBasic.ok) return null;
+
+    const basic = await rBasic.json();
+    if (!basic || !basic.username) return null;
+
+    let urls: any = {};
+    let themeData: any = {};
+    let social: any = {};
+
+    if (rUrls.ok) try { urls = await rUrls.json(); } catch {}
+    if (rTheme.ok) try { themeData = await rTheme.json(); } catch {}
+    if (rSocial.ok) try { social = await rSocial.json(); } catch {}
+
+    const merged: ProfileData = {
+      ...basic,
+      avatarUrl: urls.avatarUrl || basic.avatarUrl || '',
+      bannerUrl: urls.bannerUrl || basic.bannerUrl || '',
+      avatarDecoration: urls.avatarDecoration || basic.avatarDecoration,
+      theme: themeData.theme || basic.theme || { accentColor: '#10b981' },
+      audio: themeData.audio || basic.audio,
+      discordWidget: themeData.discordWidget || basic.discordWidget,
+      badges: social.badges || basic.badges || [],
+      socialLinks: social.socialLinks || basic.socialLinks || [],
+      views: social.views ?? basic.views ?? 0,
+      likes: social.likes ?? basic.likes ?? 0,
+    };
+
+    inMemoryProfiles[key] = merged;
+    return merged;
+  } catch (err) {
+    return null;
+  }
+}
+
+// Push to Cloud KV (multi-chunk)
+export async function pushProfileToCloud(profile: ProfileData): Promise<void> {
+  const key = profile.username.toLowerCase().trim();
+  try {
+    const basic = {
+      username: key,
+      displayName: profile.displayName,
+      bio: profile.bio || '',
+      occupation: profile.occupation || '',
+      location: profile.location || '',
+      titles: profile.titles || [],
+      updatedAt: profile.updatedAt || new Date().toISOString(),
+      createdAt: profile.createdAt || new Date().toISOString(),
+    };
+
+    const urls = {
+      avatarUrl: profile.avatarUrl || '',
+      bannerUrl: profile.bannerUrl || '',
+      avatarDecoration: profile.avatarDecoration || { type: 'none' },
+    };
+
+    const themeData = {
+      theme: profile.theme,
+      audio: profile.audio,
+      discordWidget: profile.discordWidget,
+    };
+
+    const social = {
+      badges: profile.badges || [],
+      socialLinks: profile.socialLinks || [],
+      views: profile.views || 0,
+      likes: profile.likes || 0,
+    };
+
+    await Promise.all([
+      fetch(`${CLOUD_DB_BASE}/p_basic_${key}`, {
+        method: 'POST',
+        headers: { 'x-token': CLOUD_DB_TOKEN, 'Content-Type': 'application/json' },
+        body: JSON.stringify(basic),
+      }),
+      fetch(`${CLOUD_DB_BASE}/p_urls_${key}`, {
+        method: 'POST',
+        headers: { 'x-token': CLOUD_DB_TOKEN, 'Content-Type': 'application/json' },
+        body: JSON.stringify(urls),
+      }),
+      fetch(`${CLOUD_DB_BASE}/p_theme_${key}`, {
+        method: 'POST',
+        headers: { 'x-token': CLOUD_DB_TOKEN, 'Content-Type': 'application/json' },
+        body: JSON.stringify(themeData),
+      }),
+      fetch(`${CLOUD_DB_BASE}/p_social_${key}`, {
+        method: 'POST',
+        headers: { 'x-token': CLOUD_DB_TOKEN, 'Content-Type': 'application/json' },
+        body: JSON.stringify(social),
+      }),
+    ]);
+  } catch (err) {
+    console.warn('Cloud KV push note:', err);
   }
 }
 
@@ -262,6 +391,19 @@ export function getAllProfiles(): Record<string, ProfileData> {
 export function getProfile(username: string): ProfileData | null {
   initProfiles();
   const key = username.toLowerCase().trim();
+  return inMemoryProfiles[key] || null;
+}
+
+export async function getProfileAsync(username: string): Promise<ProfileData | null> {
+  initProfiles();
+  const key = username.toLowerCase().trim();
+
+  // Try cloud KV first for instant real-time sync across Vercel instances
+  const cloud = await fetchProfileFromCloud(key);
+  if (cloud) {
+    return cloud;
+  }
+
   return inMemoryProfiles[key] || null;
 }
 
@@ -281,6 +423,16 @@ export function saveProfile(profile: ProfileData): ProfileData {
 
   inMemoryProfiles[key] = updated;
   persistProfiles();
+
+  // Fire-and-forget sync to cloud KV
+  pushProfileToCloud(updated).catch(() => {});
+
+  return updated;
+}
+
+export async function saveProfileAsync(profile: ProfileData): Promise<ProfileData> {
+  const updated = saveProfile(profile);
+  await pushProfileToCloud(updated);
   return updated;
 }
 
@@ -306,14 +458,7 @@ export function incrementLikes(username: string): number {
   return 0;
 }
 
-/**
- * Real-time presence tracking: records visitor activity and calculates active live viewers
- */
-export function recordPresence(
-  username: string,
-  visitorId: string,
-  isEnter: boolean = false
-): { liveViewers: number; totalViews: number; isNewVisit: boolean } {
+export function recordPresence(username: string, visitorId: string, isEnter: boolean = false) {
   initProfiles();
   const key = username.toLowerCase().trim();
   const now = Date.now();
@@ -322,39 +467,38 @@ export function recordPresence(
     activeVisitors[key] = {};
   }
 
-  const isNewVisit = !activeVisitors[key][visitorId];
+  const isNewVisit = isEnter && !activeVisitors[key][visitorId];
+  if (isNewVisit) {
+    incrementViews(key);
+  }
+
   activeVisitors[key][visitorId] = {
     lastSeen: now,
     enteredAt: activeVisitors[key][visitorId]?.enteredAt || now,
   };
 
-  // Clean up sessions older than 30 seconds
-  for (const [id, session] of Object.entries(activeVisitors[key])) {
-    if (now - session.lastSeen > 30000) {
-      delete activeVisitors[key][id];
+  const cutoff = now - 25000;
+  for (const vid in activeVisitors[key]) {
+    if (activeVisitors[key][vid].lastSeen < cutoff) {
+      delete activeVisitors[key][vid];
     }
   }
 
-  // If this is a new visit upon entering, increment the profile views
-  let totalViews = inMemoryProfiles[key]?.views || 0;
-  if (isEnter && isNewVisit) {
-    totalViews = incrementViews(key);
-  }
-
   const liveViewers = Math.max(1, Object.keys(activeVisitors[key]).length);
+  const totalViews = inMemoryProfiles[key]?.views || 0;
+
   return { liveViewers, totalViews, isNewVisit };
 }
 
 export function getLiveViewers(username: string): number {
   const key = username.toLowerCase().trim();
-  const now = Date.now();
   if (!activeVisitors[key]) return 1;
-
-  for (const [id, session] of Object.entries(activeVisitors[key])) {
-    if (now - session.lastSeen > 30000) {
-      delete activeVisitors[key][id];
+  const cutoff = Date.now() - 25000;
+  let count = 0;
+  for (const vid in activeVisitors[key]) {
+    if (activeVisitors[key][vid].lastSeen >= cutoff) {
+      count++;
     }
   }
-
-  return Math.max(1, Object.keys(activeVisitors[key]).length);
+  return Math.max(1, count);
 }

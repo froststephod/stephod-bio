@@ -265,6 +265,7 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
         setProfile(data.profile);
         try {
           localStorage.setItem('stephod_profile_' + data.profile.username.toLowerCase(), JSON.stringify(data.profile));
+          localStorage.setItem('stephod_profile_sync', Date.now().toString());
           document.cookie = `stephod_p_${data.profile.username.toLowerCase()}=${encodeURIComponent(JSON.stringify(data.profile))}; path=/; max-age=86400`;
         } catch {}
         setSaveSuccess(true);

@@ -1,18 +1,19 @@
 import { Metadata } from 'next';
 import { cookies } from 'next/headers';
-import { getProfile, incrementViews, saveProfile } from '@/lib/storage';
+import { getProfileAsync, incrementViews, saveProfile } from '@/lib/storage';
 import { SESSION_COOKIE_NAME, createOrGetProfileForDiscordUser } from '@/lib/auth';
 import ProfileView from '@/components/ProfileView';
 import ProfileFallbackClient from '@/components/ProfileFallbackClient';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 interface Props {
   params: { username: string };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const profile = getProfile(params.username);
+  const profile = await getProfileAsync(params.username);
   if (!profile) {
     return {
       title: `${params.username} | STEPHOD Bio`,
@@ -30,9 +31,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function UserProfilePage({ params }: Props) {
+export default async function UserProfilePage({ params }: Props) {
   const { username } = params;
-  let profile = getProfile(username);
+  let profile = await getProfileAsync(username);
 
   // If profile not yet found on this serverless instance, check session cookie
   if (!profile) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllProfiles, saveProfile } from '@/lib/storage';
+import { getAllProfiles, saveProfileAsync } from '@/lib/storage';
 import { ProfileData } from '@/types/profile';
 
 export async function GET() {
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid username format' }, { status: 400 });
     }
 
-    const saved = saveProfile({
+    const saved = await saveProfileAsync({
       ...body,
       username: cleanUsername,
     });

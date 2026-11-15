@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProfile, incrementViews } from '@/lib/storage';
+import { getProfileAsync, incrementViews } from '@/lib/storage';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(
   req: NextRequest,
@@ -7,7 +10,7 @@ export async function GET(
 ) {
   try {
     const { username } = params;
-    const profile = getProfile(username);
+    const profile = await getProfileAsync(username);
     if (!profile) {
       return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
     }
