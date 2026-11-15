@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
   return json({
     success: true,
     configured: adminConfigured(),
+    loggedIn: !!session,
     session: session ? { role: session.role, name: session.name } : null,
   });
 }

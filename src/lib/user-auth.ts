@@ -194,11 +194,8 @@ export async function registerUser(
     return { ok: false, error: 'ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น' };
   }
 
-  // Check if profile already exists
+  // Check if profile already exists in Cloud KV or memory
   const existingProfile = await getProfileStateAsync(username);
-  if (existingProfile.profile && !existingProfile.deleted) {
-    return { ok: false, error: 'ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น' };
-  }
 
   // Hash password
   const salt = randomBytes(16).toString('hex');
@@ -206,7 +203,7 @@ export async function registerUser(
 
   const account: UserAccount = {
     username,
-    displayName,
+    displayName: displayName || existingProfile.profile?.displayName || username,
     salt,
     hash,
     createdAt: new Date().toISOString(),
@@ -224,9 +221,12 @@ export async function registerUser(
     console.warn('kvSet usr_acc background sync notice:', err);
   }
 
-  // 3. Create initial profile
-  const profile = createDefaultProfileForUser(username, displayName);
-  await saveProfileAsync(profile);
+  // 3. Create initial profile or link existing one
+  let profile = existingProfile.profile;
+  if (!profile || existingProfile.deleted) {
+    profile = createDefaultProfileForUser(username, displayName);
+    await saveProfileAsync(profile);
+  }
   await addToUserIndex(username).catch(() => {});
 
   const authUser: AuthUser = {

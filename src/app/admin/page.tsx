@@ -161,13 +161,42 @@ export default function AdminPage() {
     checkSession();
   }, []);
 
+  // Auto-refresh users list every 5s while in session
+  useEffect(() => {
+    if (!session) return;
+    const interval = setInterval(() => {
+      fetchUsers();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [session]);
+
+  // Refresh whenever switching to users or overview tab
+  useEffect(() => {
+    if (session && (activeTab === 'users' || activeTab === 'overview')) {
+      fetchUsers();
+    }
+  }, [session, activeTab]);
+
+  // Refresh on window focus
+  useEffect(() => {
+    const handleFocus = () => {
+      if (session) {
+        fetchUsers();
+        fetchAnnouncement();
+        fetchAudit();
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [session]);
+
   async function checkSession() {
     setLoading(true);
     try {
       const res = await fetch('/api/admin/login');
       const data = await res.json();
       setConfigured(data.configured !== false);
-      if (data.loggedIn && data.session) {
+      if (data.session || data.loggedIn) {
         setSession(data.session);
         fetchUsers();
         fetchAnnouncement();
@@ -671,7 +700,12 @@ export default function AdminPage() {
         {/* Navigation Tabs */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-white/10">
           <button
-            onClick={() => setActiveTab('overview')}
+            onClick={() => {
+              setActiveTab('overview');
+              fetchUsers();
+              fetchAnnouncement();
+              fetchAudit();
+            }}
             className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-medium transition-all flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'overview'
                 ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-lg shadow-cyan-500/10'
@@ -683,7 +717,10 @@ export default function AdminPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab('users')}
+            onClick={() => {
+              setActiveTab('users');
+              fetchUsers();
+            }}
             className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-medium transition-all flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'users'
                 ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-lg shadow-cyan-500/10'
@@ -930,31 +967,44 @@ export default function AdminPage() {
                 )}
               </div>
 
-              {/* Status Filters */}
-              <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/40 border border-white/10 self-start sm:self-auto">
+              <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                {/* Status Filters */}
+                <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/40 border border-white/10">
+                  <button
+                    onClick={() => setStatusFilter('all')}
+                    className={`px-3 py-1.5 rounded-xl text-xs transition-colors ${
+                      statusFilter === 'all' ? 'bg-white/15 text-white font-medium' : 'text-white/50 hover:text-white'
+                    }`}
+                  >
+                    ทั้งหมด ({users.length})
+                  </button>
+                  <button
+                    onClick={() => setStatusFilter('active')}
+                    className={`px-3 py-1.5 rounded-xl text-xs transition-colors ${
+                      statusFilter === 'active' ? 'bg-emerald-500/20 text-emerald-300 font-medium' : 'text-white/50 hover:text-white'
+                    }`}
+                  >
+                    ปกติ ({users.filter((u) => !u.banned).length})
+                  </button>
+                  <button
+                    onClick={() => setStatusFilter('banned')}
+                    className={`px-3 py-1.5 rounded-xl text-xs transition-colors ${
+                      statusFilter === 'banned' ? 'bg-red-500/20 text-red-300 font-medium' : 'text-white/50 hover:text-white'
+                    }`}
+                  >
+                    ถูกระงับ ({users.filter((u) => u.banned).length})
+                  </button>
+                </div>
+
+                {/* Instant Refresh Button */}
                 <button
-                  onClick={() => setStatusFilter('all')}
-                  className={`px-3 py-1.5 rounded-xl text-xs transition-colors ${
-                    statusFilter === 'all' ? 'bg-white/15 text-white font-medium' : 'text-white/50 hover:text-white'
-                  }`}
+                  onClick={() => fetchUsers()}
+                  disabled={dataLoading}
+                  className="px-3 py-2 rounded-2xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-xs flex items-center gap-1.5 transition-all disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]"
+                  title="รีเฟรชรายชื่อผู้ใช้ทันที"
                 >
-                  ทั้งหมด ({users.length})
-                </button>
-                <button
-                  onClick={() => setStatusFilter('active')}
-                  className={`px-3 py-1.5 rounded-xl text-xs transition-colors ${
-                    statusFilter === 'active' ? 'bg-emerald-500/20 text-emerald-300 font-medium' : 'text-white/50 hover:text-white'
-                  }`}
-                >
-                  ปกติ ({users.filter((u) => !u.banned).length})
-                </button>
-                <button
-                  onClick={() => setStatusFilter('banned')}
-                  className={`px-3 py-1.5 rounded-xl text-xs transition-colors ${
-                    statusFilter === 'banned' ? 'bg-red-500/20 text-red-300 font-medium' : 'text-white/50 hover:text-white'
-                  }`}
-                >
-                  ถูกระงับ ({users.filter((u) => u.banned).length})
+                  <RefreshCw className={`w-3.5 h-3.5 ${dataLoading ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">รีเฟรชรายชื่อ</span>
                 </button>
               </div>
             </div>

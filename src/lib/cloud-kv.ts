@@ -3,7 +3,7 @@
  * The store limits every value to 1000 bytes, so larger data is split into
  * versioned chunks (see saveProfileChunks / loadProfileChunks).
  */
-const CLOUD_DB_BASE = process.env.CLOUD_DB_BASE || 'https://api.echovalue.dev/kv/default';
+const CLOUD_DB_BASE = 'https://api.echovalue.dev/kv/default';
 
 // Active token with automatic fallback in case environment variable has an expired token
 const PRIMARY_TOKEN = 'xCHpEi1b8zIMkMxCXhBj';
@@ -29,10 +29,10 @@ export async function kvRead<T = any>(key: string, timeoutMs = 6000): Promise<Kv
       signal: controller.signal,
     });
 
-    if (res.status === 402 || res.status === 401) {
+    if (res.status === 402 || res.status === 401 || (!res.ok && res.status !== 404)) {
       activeToken = PRIMARY_TOKEN;
       res = await fetch(`${CLOUD_DB_BASE}/${key}`, {
-        headers: { 'x-token': activeToken },
+        headers: { 'x-token': PRIMARY_TOKEN },
         cache: 'no-store',
       });
     }
@@ -43,7 +43,7 @@ export async function kvRead<T = any>(key: string, timeoutMs = 6000): Promise<Kv
     try {
       return { status: 'ok', data: JSON.parse(text) as T };
     } catch {
-      return { status: 'error' };
+      return { status: 'ok', data: text as unknown as T };
     }
   } catch {
     return { status: 'error' };
@@ -70,11 +70,11 @@ export async function kvSet(key: string, value: unknown, timeoutMs = 8000): Prom
         signal: controller.signal,
       });
 
-      if (res.status === 402 || res.status === 401) {
+      if (res.status === 402 || res.status === 401 || !res.ok) {
         activeToken = PRIMARY_TOKEN;
         res = await fetch(`${CLOUD_DB_BASE}/${key}`, {
           method: 'POST',
-          headers: { 'x-token': activeToken, 'Content-Type': 'application/json' },
+          headers: { 'x-token': PRIMARY_TOKEN, 'Content-Type': 'application/json' },
           body,
           cache: 'no-store',
         });

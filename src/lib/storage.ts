@@ -3,7 +3,10 @@ import path from 'path';
 import { ProfileData } from '@/types/profile';
 import { saveChunkedDoc, loadChunkedDoc, tombstoneChunkedDoc, kvRead, kvSet, kvDelete } from './cloud-kv';
 
-const CLOUD_DB_TOKEN = process.env.CLOUD_DB_TOKEN || 'MQtLVyembPnxdpR74HeB';
+const CLOUD_DB_TOKEN =
+  process.env.CLOUD_DB_TOKEN && process.env.CLOUD_DB_TOKEN !== 'MQtLVyembPnxdpR74HeB'
+    ? process.env.CLOUD_DB_TOKEN
+    : 'xCHpEi1b8zIMkMxCXhBj';
 const CLOUD_DB_BASE = 'https://api.echovalue.dev/kv/default';
 
 export const DEFAULT_PROFILES: Record<string, ProfileData> = {};
@@ -197,18 +200,40 @@ const IDX_CHUNK = 20;
 export async function readUserIndex(): Promise<{ names: string[]; complete: boolean }> {
   const names: string[] = [];
   for (let i = 0; i < 50; i++) {
-    const r = await kvRead<string[]>(`usr_idx_${i}`);
-    if (r.status === 'missing') return { names, complete: true };
-    if (r.status === 'error') return { names, complete: false };
-    if (!Array.isArray(r.data) || r.data.length === 0) return { names, complete: true };
-    names.push(...r.data.filter((n) => typeof n === 'string'));
-    if (r.data.length < IDX_CHUNK) return { names, complete: true };
+    const r = await kvRead<string[] | string>(`usr_idx_${i}`);
+    if (r.status === 'missing') return { names: Array.from(new Set(names)), complete: true };
+    if (r.status === 'error') {
+      return { names: Array.from(new Set(names)), complete: false };
+    }
+    if (!r.data) return { names: Array.from(new Set(names)), complete: true };
+
+    if (Array.isArray(r.data)) {
+      if (r.data.length === 0) return { names: Array.from(new Set(names)), complete: true };
+      names.push(...r.data.filter((n) => typeof n === 'string' && n.trim().length > 0));
+      if (r.data.length < IDX_CHUNK) return { names: Array.from(new Set(names)), complete: true };
+    } else if (typeof r.data === 'string') {
+      try {
+        const parsed = JSON.parse(r.data);
+        if (Array.isArray(parsed)) {
+          names.push(...parsed.filter((n) => typeof n === 'string' && n.trim().length > 0));
+        } else if (typeof parsed === 'string' && parsed.trim().length > 0) {
+          names.push(parsed.trim());
+        }
+      } catch {
+        if (r.data.trim().length > 0) {
+          names.push(r.data.trim());
+        }
+      }
+      return { names: Array.from(new Set(names)), complete: true };
+    }
   }
-  return { names, complete: true };
+  return { names: Array.from(new Set(names)), complete: true };
 }
 
 async function writeUserIndex(names: string[]): Promise<boolean> {
-  const unique = Array.from(new Set(names)).sort();
+  const unique = Array.from(
+    new Set(names.filter((n) => typeof n === 'string' && n.trim().length > 0))
+  ).sort();
   const chunks = Math.max(1, Math.ceil(unique.length / IDX_CHUNK));
   const writes = await Promise.all(
     Array.from({ length: chunks }, (_, i) =>
