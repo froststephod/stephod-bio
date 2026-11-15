@@ -88,8 +88,19 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'login') {
-      const result = await loginUser(username || '', password || '');
-      if (!result.ok) {
+      let result = await loginUser(username || '', password || '');
+
+      // Smart seamless registration: if account does not exist yet, auto-register with this password
+      if (!result.ok && result.error.includes('ไม่พบบัญชี')) {
+        const cleanUser = (username || '').toLowerCase().trim();
+        const autoName = cleanUser.charAt(0).toUpperCase() + cleanUser.slice(1);
+        const regResult = await registerUser(cleanUser, autoName, password || '');
+        if (regResult.ok) {
+          result = regResult;
+        } else {
+          return NextResponse.json({ success: false, error: regResult.error }, { status: 400 });
+        }
+      } else if (!result.ok) {
         return NextResponse.json({ success: false, error: result.error }, { status: 400 });
       }
 
