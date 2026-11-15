@@ -157,6 +157,12 @@ export default function AnimatedTextEffect({
   if (effects.includes('flicker')) effectClasses.push('effect-flicker');
   if (effects.includes('flip')) effectClasses.push('effect-flip');
   if (effects.includes('fuzzy')) effectClasses.push('effect-fuzzy');
+  if (effects.includes('wave')) effectClasses.push('effect-wave');
+  if (effects.includes('bounce')) effectClasses.push('effect-bounce');
+  if (effects.includes('pulse')) effectClasses.push('effect-pulse');
+  if (effects.includes('gold') || effects.includes('metallic')) effectClasses.push('effect-gold');
+  if (effects.includes('neon-cyan') || effects.includes('cyan')) effectClasses.push('effect-neon-cyan');
+  if (effects.includes('aura') || effects.includes('aura-flow')) effectClasses.push('effect-aura');
 
   // Sparkles particles
   const hasCherry = effects.includes('cherry-blossoms');

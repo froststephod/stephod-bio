@@ -25,10 +25,16 @@ interface Props {
   saving?: boolean;
 }
 
-// 28 Name Effects - All 100% unlocked and available
+// 34 Name Effects - All 100% unlocked and available
 const NAME_EFFECTS_LIST = [
   { id: 'typewriter', name: 'Typewriter', sub: 'รองรับหลายคำ', tag: 'typewriter' },
   { id: 'morph', name: 'Morph', sub: 'รองรับหลายคำ', tag: 'morph' },
+  { id: 'wave', name: 'Wave', sub: 'คลื่นพริ้วไหว', tag: 'wave', icon: '🌊' },
+  { id: 'bounce', name: 'Bounce', sub: 'เด้งดึ๋งนุ่มนวล', tag: 'bounce', icon: '⚡' },
+  { id: 'pulse', name: 'Pulse', sub: 'จังหวะชีพจร', tag: 'pulse', icon: '💓' },
+  { id: 'gold', name: 'Metallic Gold', sub: 'ทองคำหรูหรา', tag: 'gold', icon: '👑' },
+  { id: 'neon-cyan', name: 'Neon Cyan', sub: 'ฟ้าไซเบอร์พังค์', tag: 'cyan', icon: '💎' },
+  { id: 'aura', name: 'Aura Flow', sub: 'ออร่าไล่เฉดสี', tag: 'aura', icon: '✨' },
   { id: 'cherry-blossoms', name: 'Cherry Blossoms', sub: 'กลีบซากุระร่วง', tag: 'cherry', icon: '🌸' },
   { id: 'shimmer', name: 'Shimmer', sub: 'แสงเงาวิ่งผ่าน', tag: 'shimmer' },
   { id: 'shine', name: 'Shine', sub: 'วิบวับเปล่งประกาย', tag: 'shine' },
@@ -57,10 +63,16 @@ const NAME_EFFECTS_LIST = [
   { id: 'yellow-sparkles', name: 'Yellow Sparkles', sub: 'ดาวเหลือง', tag: 'sparkles' },
 ];
 
-// 12 Bio Effects - All 100% unlocked and available
+// 18 Bio Effects - All 100% unlocked and available
 const BIO_EFFECTS_LIST = [
   { id: 'typewriter', name: 'Typewriter', sub: 'รองรับหลายคำ', tag: 'typewriter' },
   { id: 'morph', name: 'Morph', sub: 'รองรับหลายคำ', tag: 'morph' },
+  { id: 'wave', name: 'Wave', sub: 'คลื่นพริ้วไหว', tag: 'wave' },
+  { id: 'bounce', name: 'Bounce', sub: 'เด้งดึ๋งนุ่มนวล', tag: 'bounce' },
+  { id: 'pulse', name: 'Pulse', sub: 'จังหวะชีพจร', tag: 'pulse' },
+  { id: 'gold', name: 'Metallic Gold', sub: 'ทองคำหรูหรา', tag: 'gold' },
+  { id: 'neon-cyan', name: 'Neon Cyan', sub: 'ฟ้าไซเบอร์พังค์', tag: 'cyan' },
+  { id: 'aura', name: 'Aura Flow', sub: 'ออร่าไล่เฉดสี', tag: 'aura' },
   { id: 'shimmer', name: 'Shimmer', sub: 'แสงเงาวิ่งผ่าน', tag: 'shimmer' },
   { id: 'shine', name: 'Shine', sub: 'วิบวับเปล่งประกาย', tag: 'shine' },
   { id: 'glow', name: 'Glow', sub: 'เรืองแสงนีออน', tag: 'glow' },
