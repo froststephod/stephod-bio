@@ -773,18 +773,6 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                     <Eye className={`w-3.5 h-3.5 ${isViewsAnimation ? 'animate-bounce text-emerald-400' : ''}`} />
                     <span>{views.toLocaleString()} views</span>
                   </div>
-
-                  {/* Real-time Live Active Badge */}
-                  <div
-                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[10px] text-emerald-400 font-semibold shadow-[0_0_12px_rgba(16,185,129,0.25)]"
-                    title={`มีคนกำลังดูหน้านี้อยู่ ${liveViewers} คนแบบสดๆ`}
-                  >
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                    </span>
-                    <span>{liveViewers} กำลังดูอยู่</span>
-                  </div>
                 </div>
 
                 <button
@@ -881,13 +869,6 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                       >
                         <Eye className={`w-3.5 h-3.5 ${isViewsAnimation ? 'animate-bounce text-emerald-400' : ''}`} />
                         <span>{views.toLocaleString()}</span>
-                      </div>
-                      <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[10px] text-emerald-400 font-semibold">
-                        <span className="relative flex h-1.5 w-1.5">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                        </span>
-                        <span>{liveViewers} ดูสด</span>
                       </div>
                     </div>
                     <button
