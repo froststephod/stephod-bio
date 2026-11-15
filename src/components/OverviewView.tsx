@@ -274,21 +274,53 @@ export default function OverviewView({ profile, onNavigateToTab, onClaimBadge }:
   const ownedCount = COLLECTIBLE_BADGES.filter((b) => isBadgeOwned(b.id)).length;
   const progressPercent = Math.round((ownedCount / totalBadges) * 100);
 
+  // Real-time live stats polling in Dashboard
+  const [liveViewers, setLiveViewers] = useState<number>(1);
+  const [liveViews, setLiveViews] = useState<number>(profile.views || 0);
+
+  useEffect(() => {
+    const fetchLivePresence = async () => {
+      try {
+        const res = await fetch(`/api/profiles/${encodeURIComponent(profile.username)}/presence`);
+        const data = await res.json();
+        if (data && data.success) {
+          setLiveViewers(data.liveViewers || 1);
+          if (typeof data.totalViews === 'number') {
+            setLiveViews(data.totalViews);
+          }
+        }
+      } catch {}
+    };
+
+    fetchLivePresence();
+    const interval = setInterval(fetchLivePresence, 6000);
+    return () => clearInterval(interval);
+  }, [profile.username]);
+
   return (
     <div className="space-y-5 animate-in fade-in duration-300">
       {/* 1. Top 3 Metric Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-        {/* Card 1: Views */}
-        <div className="p-4 rounded-2xl border border-white/10 bg-[#121319] flex items-center justify-between shadow-lg">
+        {/* Card 1: Views & Live Viewers */}
+        <div className="p-4 rounded-2xl border border-white/10 bg-[#121319] flex items-center justify-between shadow-lg relative overflow-hidden group">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
               <Eye className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-xl font-extrabold text-white font-mono tracking-tight">
-                {(profile.views || 0).toLocaleString()}
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-extrabold text-white font-mono tracking-tight">
+                  {liveViews.toLocaleString()}
+                </span>
+                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center gap-1 shadow-[0_0_8px_rgba(16,185,129,0.2)]">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                  </span>
+                  <span>{liveViewers} ดูสด</span>
+                </span>
               </div>
-              <div className="text-[11px] text-white/50">ยอดเข้าชมโปรไฟล์</div>
+              <div className="text-[11px] text-white/50">ยอดเข้าชมโปรไฟล์ (Real-time)</div>
             </div>
           </div>
         </div>

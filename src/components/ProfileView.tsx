@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { fireConfetti } from '@/lib/confetti';
 import { Eye, Heart, Sparkles, MapPin, Share2, Check } from 'lucide-react';
 import { ProfileData } from '@/types/profile';
@@ -28,6 +28,58 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
   const [currentTitleIndex, setCurrentTitleIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Real-time presence & live views
+  const [views, setViews] = useState(profile.views || 0);
+  const [liveViewers, setLiveViewers] = useState(1);
+  const [showLiveNotification, setShowLiveNotification] = useState(false);
+  const [liveNotificationText, setLiveNotificationText] = useState('');
+  const lastViewCountRef = useRef(profile.views || 0);
+
+  // Real-time Heartbeat & Live Visitor Tracking
+  useEffect(() => {
+    if (isPreview) return;
+
+    let visitorId = '';
+    try {
+      visitorId = sessionStorage.getItem('stephod_vid') || '';
+      if (!visitorId) {
+        visitorId = 'vid_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now();
+        sessionStorage.setItem('stephod_vid', visitorId);
+      }
+    } catch {
+      visitorId = 'vid_' + Math.random().toString(36).substring(2, 9);
+    }
+
+    const sendPresence = async (isEnter = false) => {
+      try {
+        const res = await fetch(`/api/profiles/${encodeURIComponent(profile.username)}/presence`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visitorId, isEnter }),
+        });
+        const data = await res.json();
+        if (data && data.success) {
+          setLiveViewers(data.liveViewers || 1);
+          if (typeof data.totalViews === 'number') {
+            if (data.totalViews > lastViewCountRef.current && !isEnter) {
+              setLiveNotificationText(`มีผู้เข้าชมคนใหม่เข้ามาดูโปรไฟล์สด! (ยอดวิว: ${data.totalViews.toLocaleString()})`);
+              setShowLiveNotification(true);
+              setTimeout(() => setShowLiveNotification(false), 5000);
+            }
+            setViews(data.totalViews);
+            lastViewCountRef.current = data.totalViews;
+          }
+        }
+      } catch {
+        // Silently continue
+      }
+    };
+
+    sendPresence(true);
+    const interval = setInterval(() => sendPresence(false), 8000);
+    return () => clearInterval(interval);
+  }, [profile.username, isPreview]);
 
   // Typewriter effect for titles
   useEffect(() => {
@@ -431,15 +483,29 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
                 </div>
               )}
 
-              {/* Profile Footer Stats: Views & Likes */}
-              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between text-xs opacity-50 font-mono">
-                <div
-                  className="flex items-center gap-1.5"
-                  title="Profile Views"
-                  style={{ textShadow: isTransparent ? '0 1px 6px rgba(0,0,0,0.9)' : undefined }}
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>{(profile.views || 0).toLocaleString()} views</span>
+              {/* Profile Footer Stats: Views & Likes & Live Viewers */}
+              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between text-xs font-mono">
+                <div className="flex items-center gap-2 sm:gap-2.5">
+                  <div
+                    className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity"
+                    title="ยอดผู้เข้าชมทั้งหมด"
+                    style={{ textShadow: isTransparent ? '0 1px 6px rgba(0,0,0,0.9)' : undefined }}
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>{views.toLocaleString()} views</span>
+                  </div>
+
+                  {/* Real-time Live Active Badge */}
+                  <div
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[10px] text-emerald-400 font-semibold shadow-[0_0_12px_rgba(16,185,129,0.25)]"
+                    title={`มีคนกำลังดูหน้านี้อยู่ ${liveViewers} คนแบบสดๆ`}
+                  >
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span>{liveViewers} กำลังดูอยู่</span>
+                  </div>
                 </div>
 
                 <button
@@ -518,11 +584,20 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
                     </div>
                   )}
 
-                  {/* Views & Likes */}
-                  <div className="mt-4 pt-3 border-t border-white/10 w-full flex items-center justify-between text-xs opacity-50 font-mono">
-                    <div className="flex items-center gap-1.5">
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>{(profile.views || 0).toLocaleString()}</span>
+                  {/* Views & Likes & Live Viewers */}
+                  <div className="mt-4 pt-3 border-t border-white/10 w-full flex items-center justify-between text-xs font-mono">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 opacity-60">
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>{views.toLocaleString()}</span>
+                      </div>
+                      <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[10px] text-emerald-400 font-semibold">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                        </span>
+                        <span>{liveViewers} ดูสด</span>
+                      </div>
                     </div>
                     <button
                       onClick={handleLike}
@@ -801,6 +876,28 @@ export default function ProfileView({ profile, isPreview = false }: Props) {
           </a>
         </div>
       </div>
+
+      {/* Real-time Live Toast Notification when visitor enters */}
+      {showLiveNotification && (
+        <div className="fixed bottom-6 left-6 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300 pointer-events-none">
+          <div className="px-4 py-2.5 rounded-2xl bg-[#090b14]/95 border border-emerald-500/40 backdrop-blur-xl shadow-[0_0_35px_rgba(16,185,129,0.3)] flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.4)]">
+              <Eye className="w-4 h-4 animate-pulse" />
+            </div>
+            <div className="text-left">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-white">ผู้เข้าชมใหม่แบบเรียลไทม์</span>
+                <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 animate-pulse">
+                  LIVE
+                </span>
+              </div>
+              <p className="text-[11px] text-white/70 font-mono mt-0.5">
+                {liveNotificationText}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Background Audio Player */}
       <AudioPlayer

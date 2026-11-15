@@ -124,6 +124,14 @@ export const DEFAULT_PROFILES: Record<string, ProfileData> = {
 let inMemoryProfiles: Record<string, ProfileData> = { ...DEFAULT_PROFILES };
 let initialized = false;
 
+interface ActiveSession {
+  lastSeen: number;
+  enteredAt: number;
+}
+
+// In-memory real-time visitor presence map: username -> (visitorId -> session)
+const activeVisitors: Record<string, Record<string, ActiveSession>> = {};
+
 function getStorageFilePath(): string {
   // If running on Vercel or Lambda serverless, write to /tmp
   if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
@@ -224,4 +232,57 @@ export function incrementLikes(username: string): number {
     return inMemoryProfiles[key].likes;
   }
   return 0;
+}
+
+/**
+ * Real-time presence tracking: records visitor activity and calculates active live viewers
+ */
+export function recordPresence(
+  username: string,
+  visitorId: string,
+  isEnter: boolean = false
+): { liveViewers: number; totalViews: number; isNewVisit: boolean } {
+  initProfiles();
+  const key = username.toLowerCase().trim();
+  const now = Date.now();
+
+  if (!activeVisitors[key]) {
+    activeVisitors[key] = {};
+  }
+
+  const isNewVisit = !activeVisitors[key][visitorId];
+  activeVisitors[key][visitorId] = {
+    lastSeen: now,
+    enteredAt: activeVisitors[key][visitorId]?.enteredAt || now,
+  };
+
+  // Clean up sessions older than 30 seconds
+  for (const [id, session] of Object.entries(activeVisitors[key])) {
+    if (now - session.lastSeen > 30000) {
+      delete activeVisitors[key][id];
+    }
+  }
+
+  // If this is a new visit upon entering, increment the profile views
+  let totalViews = inMemoryProfiles[key]?.views || 0;
+  if (isEnter && isNewVisit) {
+    totalViews = incrementViews(key);
+  }
+
+  const liveViewers = Math.max(1, Object.keys(activeVisitors[key]).length);
+  return { liveViewers, totalViews, isNewVisit };
+}
+
+export function getLiveViewers(username: string): number {
+  const key = username.toLowerCase().trim();
+  const now = Date.now();
+  if (!activeVisitors[key]) return 1;
+
+  for (const [id, session] of Object.entries(activeVisitors[key])) {
+    if (now - session.lastSeen > 30000) {
+      delete activeVisitors[key][id];
+    }
+  }
+
+  return Math.max(1, Object.keys(activeVisitors[key]).length);
 }
