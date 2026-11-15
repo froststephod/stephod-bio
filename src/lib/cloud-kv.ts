@@ -9,6 +9,14 @@ const CLOUD_DB_BASE = 'https://api.echovalue.dev/kv/default';
 const PRIMARY_TOKEN = 'xCHpEi1b8zIMkMxCXhBj';
 let activeToken = PRIMARY_TOKEN;
 
+const DEFAULT_HEADERS: Record<string, string> = {
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+  'Accept': 'application/json, text/plain, */*',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Referer': 'https://stephod.vercel.app/',
+};
+
 const MAX_BODY_BYTES = 980;
 const MAX_CHUNKS = 24;
 const CHUNK_CHARS = 880; // base64 chars per chunk (envelope adds ~30 bytes)
@@ -23,7 +31,7 @@ export async function kvRead<T = any>(key: string, timeoutMs = 6000): Promise<Kv
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     let res = await fetch(`${CLOUD_DB_BASE}/${key}`, {
-      headers: { 'x-token': activeToken },
+      headers: { ...DEFAULT_HEADERS, 'x-token': activeToken },
       cache: 'no-store',
       signal: controller.signal,
     });
@@ -31,7 +39,7 @@ export async function kvRead<T = any>(key: string, timeoutMs = 6000): Promise<Kv
     if (res.status === 402 || res.status === 401 || (!res.ok && res.status !== 404)) {
       activeToken = PRIMARY_TOKEN;
       res = await fetch(`${CLOUD_DB_BASE}/${key}`, {
-        headers: { 'x-token': PRIMARY_TOKEN },
+        headers: { ...DEFAULT_HEADERS, 'x-token': PRIMARY_TOKEN },
         cache: 'no-store',
       });
     }
@@ -66,7 +74,7 @@ export async function kvSet(key: string, value: unknown, timeoutMs = 8000): Prom
     try {
       let res = await fetch(`${CLOUD_DB_BASE}/${key}`, {
         method: 'POST',
-        headers: { 'x-token': activeToken, 'Content-Type': 'application/json' },
+        headers: { ...DEFAULT_HEADERS, 'x-token': activeToken, 'Content-Type': 'application/json' },
         body,
         cache: 'no-store',
         signal: controller.signal,
@@ -76,7 +84,7 @@ export async function kvSet(key: string, value: unknown, timeoutMs = 8000): Prom
         activeToken = PRIMARY_TOKEN;
         res = await fetch(`${CLOUD_DB_BASE}/${key}`, {
           method: 'POST',
-          headers: { 'x-token': PRIMARY_TOKEN, 'Content-Type': 'application/json' },
+          headers: { ...DEFAULT_HEADERS, 'x-token': PRIMARY_TOKEN, 'Content-Type': 'application/json' },
           body,
           cache: 'no-store',
         });
@@ -101,7 +109,7 @@ export async function kvDelete(key: string, timeoutMs = 6000): Promise<boolean> 
   try {
     let res = await fetch(`${CLOUD_DB_BASE}/${key}`, {
       method: 'DELETE',
-      headers: { 'x-token': activeToken },
+      headers: { ...DEFAULT_HEADERS, 'x-token': activeToken },
       signal: controller.signal,
     });
 
@@ -109,7 +117,7 @@ export async function kvDelete(key: string, timeoutMs = 6000): Promise<boolean> 
       activeToken = PRIMARY_TOKEN;
       res = await fetch(`${CLOUD_DB_BASE}/${key}`, {
         method: 'DELETE',
-        headers: { 'x-token': activeToken },
+        headers: { ...DEFAULT_HEADERS, 'x-token': activeToken },
       });
     }
 

@@ -9,6 +9,14 @@ const CLOUD_DB_TOKEN =
     : 'xCHpEi1b8zIMkMxCXhBj';
 const CLOUD_DB_BASE = 'https://api.echovalue.dev/kv/default';
 
+const DEFAULT_HEADERS: Record<string, string> = {
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+  'Accept': 'application/json, text/plain, */*',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Referer': 'https://stephod.vercel.app/',
+};
+
 export const DEFAULT_PROFILES: Record<string, ProfileData> = {};
 
 // Global in-memory cache
@@ -86,22 +94,22 @@ export async function fetchProfileFromCloud(username: string): Promise<ProfileDa
 
     const [rBasic, rUrls, rTheme, rSocial] = await Promise.all([
       fetch(`${CLOUD_DB_BASE}/p_basic_${key}`, {
-        headers: { 'x-token': CLOUD_DB_TOKEN },
+        headers: { ...DEFAULT_HEADERS, 'x-token': CLOUD_DB_TOKEN },
         signal: controller.signal,
         cache: 'no-store',
       }),
       fetch(`${CLOUD_DB_BASE}/p_urls_${key}`, {
-        headers: { 'x-token': CLOUD_DB_TOKEN },
+        headers: { ...DEFAULT_HEADERS, 'x-token': CLOUD_DB_TOKEN },
         signal: controller.signal,
         cache: 'no-store',
       }),
       fetch(`${CLOUD_DB_BASE}/p_theme_${key}`, {
-        headers: { 'x-token': CLOUD_DB_TOKEN },
+        headers: { ...DEFAULT_HEADERS, 'x-token': CLOUD_DB_TOKEN },
         signal: controller.signal,
         cache: 'no-store',
       }),
       fetch(`${CLOUD_DB_BASE}/p_social_${key}`, {
-        headers: { 'x-token': CLOUD_DB_TOKEN },
+        headers: { ...DEFAULT_HEADERS, 'x-token': CLOUD_DB_TOKEN },
         signal: controller.signal,
         cache: 'no-store',
       }),
