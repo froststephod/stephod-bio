@@ -42,7 +42,7 @@ import BadgeBar from './BadgeBar';
 import AvatarWithDecoration from './AvatarWithDecoration';
 import AvatarDecorationModal from './AvatarDecorationModal';
 import FontPickerDropdown from './FontPickerDropdown';
-import DiscordLoginScreen from './DiscordLoginScreen';
+import AuthScreen from './AuthScreen';
 import { getSpotifyInfo, fetchSpotifyOEmbed } from '@/lib/music';
 import { siteConfig } from '@/config/site';
 import ExtraEffectsView from './ExtraEffectsView';
@@ -394,14 +394,14 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
     return (
       <div className="min-h-screen bg-[#07080c] flex flex-col items-center justify-center gap-3">
         <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-        <span className="text-xs text-white/40 font-mono tracking-wider">กำลังตรวจสอบบัญชี Discord...</span>
+        <span className="text-xs text-white/40 font-mono tracking-wider">กำลังตรวจสอบบัญชีผู้ใช้...</span>
       </div>
     );
   }
 
   if (!currentUser) {
     return (
-      <DiscordLoginScreen
+      <AuthScreen
         onLoginSuccess={(user, userProfile) => {
           setCurrentUser(user);
           if (userProfile) {
@@ -559,17 +559,17 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
               </div>
               <div className="min-w-0">
                 <div className="text-xs font-bold text-white truncate">
-                  {currentUser?.globalName || profile.displayName || profile.username}
+                  {currentUser?.displayName || currentUser?.globalName || profile.displayName || profile.username}
                 </div>
                 <div className="text-[10px] text-white/40 font-mono truncate">
-                  Discord: @{currentUser?.username || profile.username}
+                  @{currentUser?.username || profile.username}
                 </div>
               </div>
             </div>
             <button
               onClick={handleLogout}
               className="p-1.5 rounded-lg text-white/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-              title="ออกจากระบบ Discord"
+              title="ออกจากระบบ"
             >
               <LogOut className="w-3.5 h-3.5" />
             </button>
@@ -605,11 +605,11 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
           {/* Top Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* User Profile Badge (Locked to authenticated user) */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-[#5865F2]/40 bg-[#5865F2]/10 text-white shadow-sm">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 text-white shadow-sm">
               <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]" />
               <span className="text-xs font-mono font-bold text-white">@{profile.username}</span>
               <span className="text-[10px] text-white/50 border-l border-white/10 pl-2">
-                Discord: {currentUser?.username}
+                {currentUser?.displayName || currentUser?.globalName || profile.displayName}
               </span>
             </div>
 
@@ -648,7 +648,7 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
             <button
               onClick={handleLogout}
               className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-red-500/15 hover:border-red-500/30 text-white/50 hover:text-red-400 text-xs flex items-center gap-1.5 transition-colors"
-              title="ออกจากระบบ Discord"
+              title="ออกจากระบบ"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span className="hidden xl:inline">ออกจากระบบ</span>

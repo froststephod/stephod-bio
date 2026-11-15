@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { getProfileAsync, incrementViews, saveProfile } from '@/lib/storage';
-import { SESSION_COOKIE_NAME, createOrGetProfileForDiscordUser } from '@/lib/auth';
+import { USER_SESSION_COOKIE, parseSessionCookie, createDefaultProfileForUser } from '@/lib/user-auth';
 import { getAnnouncement } from '@/lib/admin';
 import ProfileView from '@/components/ProfileView';
 import ProfileFallbackClient from '@/components/ProfileFallbackClient';
@@ -50,15 +50,16 @@ export default async function UserProfilePage({ params }: Props) {
   if (!profile) {
     try {
       const cookieStore = cookies();
-      const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+      const sessionCookie = cookieStore.get(USER_SESSION_COOKIE)?.value;
       if (sessionCookie) {
-        const session = JSON.parse(sessionCookie);
+        const session = parseSessionCookie(sessionCookie);
         if (
           session &&
           (session.profileUsername?.toLowerCase() === username.toLowerCase() ||
             session.username?.toLowerCase() === username.toLowerCase())
         ) {
-          profile = createOrGetProfileForDiscordUser(session);
+          const defaultProf = createDefaultProfileForUser(session.username, session.globalName || session.displayName || session.username);
+          profile = saveProfile(defaultProf);
         }
       }
 

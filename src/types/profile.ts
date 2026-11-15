@@ -84,10 +84,11 @@ export interface AvatarDecoration {
 }
 
 export interface AuthUser {
-  id: string; // Discord user ID
-  username: string; // Discord username
-  globalName?: string; // Discord display name
-  avatar?: string; // Discord avatar URL or hash
+  id: string; // user ID
+  username: string; // username
+  displayName?: string; // Display name
+  globalName?: string; // Discord / legacy display name
+  avatar?: string; // avatar URL
   profileUsername: string; // The bio-profile linked to this user
 }
 

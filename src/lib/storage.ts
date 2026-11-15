@@ -175,8 +175,9 @@ export async function deleteProfileFromCloud(username: string): Promise<boolean>
   await tombstoneChunkedDoc(`pf_${key}`).catch(() => {});
   await removeFromUserIndex(key).catch(() => {});
 
-  // Clean up legacy format keys in background
+  // Clean up legacy format keys & auth account in background
   Promise.all([
+    kvDelete(`usr_acc_${key}`),
     kvDelete(`profile_${key}`),
     kvDelete(`profile_${key}_social`),
     kvDelete(`profile_${key}_theme`),

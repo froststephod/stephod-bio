@@ -1,28 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  SESSION_COOKIE_NAME,
-  DEMO_DISCORD_USERS,
-  createOrGetProfileForDiscordUser,
-  findProfileByDiscordId,
-} from '@/lib/auth';
-import { getProfile } from '@/lib/storage';
-import { AuthUser } from '@/types/profile';
+  USER_SESSION_COOKIE,
+  createSessionCookie,
+  parseSessionCookie,
+  registerUser,
+  loginUser,
+} from '@/lib/user-auth';
+import { getProfileAsync } from '@/lib/storage';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    const sessionCookie = req.cookies.get(SESSION_COOKIE_NAME)?.value;
+    const sessionCookie = req.cookies.get(USER_SESSION_COOKIE)?.value;
     if (!sessionCookie) {
       return NextResponse.json({ authenticated: false });
     }
 
-    const session: AuthUser = JSON.parse(sessionCookie);
-    if (!session || !session.id) {
+    const session = parseSessionCookie(sessionCookie);
+    if (!session || !session.username) {
       return NextResponse.json({ authenticated: false });
     }
 
-    const profile = getProfile(session.profileUsername);
+    const profile = await getProfileAsync(session.profileUsername || session.username);
     if (!profile) {
       return NextResponse.json({ authenticated: false });
+    }
+
+    if (profile.banned) {
+      const res = NextResponse.json({
+        authenticated: false,
+        banned: true,
+        reason: profile.banReason,
+      });
+      res.cookies.delete(USER_SESSION_COOKIE);
+      return res;
     }
 
     return NextResponse.json({
@@ -31,6 +43,7 @@ export async function GET(req: NextRequest) {
       profile,
     });
   } catch (err) {
+    console.error('Session check error:', err);
     return NextResponse.json({ authenticated: false });
   }
 }
@@ -38,71 +51,88 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { action, userId, customUsername } = body;
+    const { action, username, displayName, password } = body;
 
-    let discordUser: { id: string; username: string; globalName?: string; avatar?: string } | null = null;
+    if (action === 'register') {
+      const result = await registerUser(username || '', displayName || '', password || '');
+      if (!result.ok) {
+        return NextResponse.json({ success: false, error: result.error }, { status: 400 });
+      }
 
-    if (action === 'demo_login') {
-      const demo = DEMO_DISCORD_USERS.find((u) => u.username === userId || u.id === userId) || DEMO_DISCORD_USERS[0];
-      discordUser = {
-        id: demo.id,
-        username: demo.username,
-        globalName: demo.globalName,
-        avatar: demo.avatar,
-      };
-    } else if (action === 'custom_discord') {
-      const clean = (customUsername || 'guest').toLowerCase().replace(/[^a-z0-9_-]/g, '');
-      const randomId = '100' + Math.floor(Math.random() * 8999999999 + 1000000000);
-      discordUser = {
-        id: randomId,
-        username: clean,
-        globalName: clean.charAt(0).toUpperCase() + clean.slice(1) + ' ⚡',
-        avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${clean}`,
-      };
+      const res = NextResponse.json({
+        success: true,
+        user: result.user,
+        profile: result.profile,
+      });
+
+      // Set auth session cookie
+      res.cookies.set(USER_SESSION_COOKIE, createSessionCookie(result.user), {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30, // 30 days
+        sameSite: 'lax',
+        httpOnly: false, // Accessible to client if needed
+      });
+
+      // Set profile cache cookie
+      res.cookies.set(
+        `stephod_p_${result.profile.username.toLowerCase()}`,
+        encodeURIComponent(JSON.stringify(result.profile)),
+        {
+          path: '/',
+          maxAge: 60 * 60 * 24 * 30,
+          sameSite: 'lax',
+        }
+      );
+
+      return res;
     }
 
-    if (!discordUser) {
-      return NextResponse.json({ success: false, error: 'Invalid login request' }, { status: 400 });
+    if (action === 'login') {
+      const result = await loginUser(username || '', password || '');
+      if (!result.ok) {
+        return NextResponse.json({ success: false, error: result.error }, { status: 400 });
+      }
+
+      const res = NextResponse.json({
+        success: true,
+        user: result.user,
+        profile: result.profile,
+      });
+
+      // Set auth session cookie
+      res.cookies.set(USER_SESSION_COOKIE, createSessionCookie(result.user), {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30,
+        sameSite: 'lax',
+        httpOnly: false,
+      });
+
+      // Set profile cache cookie
+      res.cookies.set(
+        `stephod_p_${result.profile.username.toLowerCase()}`,
+        encodeURIComponent(JSON.stringify(result.profile)),
+        {
+          path: '/',
+          maxAge: 60 * 60 * 24 * 30,
+          sameSite: 'lax',
+        }
+      );
+
+      return res;
     }
 
-    // Bind / Create single profile for this Discord user
-    const profile = createOrGetProfileForDiscordUser(discordUser);
-
-    const sessionUser: AuthUser = {
-      id: discordUser.id,
-      username: discordUser.username,
-      globalName: discordUser.globalName || discordUser.username,
-      avatar: discordUser.avatar,
-      profileUsername: profile.username,
-    };
-
-    const res = NextResponse.json({
-      success: true,
-      user: sessionUser,
-      profile,
-    });
-
-    // Set cookie
-    res.cookies.set(SESSION_COOKIE_NAME, JSON.stringify(sessionUser), {
-      path: '/',
-      maxAge: 60 * 60 * 24 * 30, // 30 days
-      sameSite: 'lax',
-    });
-    res.cookies.set(`stephod_p_${profile.username.toLowerCase()}`, encodeURIComponent(JSON.stringify(profile)), {
-      path: '/',
-      maxAge: 60 * 60 * 24 * 30,
-      sameSite: 'lax',
-    });
-
-    return res;
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json({ success: false, error: 'Login failed' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'คำสั่งไม่ถูกต้อง (Invalid action)' }, { status: 400 });
+  } catch (err: any) {
+    console.error('Auth request error:', err);
+    return NextResponse.json(
+      { success: false, error: err?.message || 'เกิดข้อผิดพลาดในการประมวลผล' },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE() {
-  const res = NextResponse.json({ success: true, message: 'Logged out' });
-  res.cookies.delete(SESSION_COOKIE_NAME);
+  const res = NextResponse.json({ success: true, message: 'ออกจากระบบสำเร็จ' });
+  res.cookies.delete(USER_SESSION_COOKIE);
   return res;
 }
