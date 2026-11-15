@@ -325,7 +325,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
   const accent = profile.theme.accentColor || '#22c55e';
   const glow = profile.theme.glowColor || accent;
   const blurPx = profile.theme.cardBlur ?? 16;
-  const opacityVal = (profile.theme.cardOpacity ?? 35) / 100;
+  const opacityVal = (profile.theme.cardOpacity ?? 30) / 100;
   const radiusPx = profile.theme.cardRadius ?? 24;
   const baseTypewriterSpeed =
     profile.theme.extraEffects?.typewriterSpeed ||
@@ -410,30 +410,36 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
     };
   } else if (cardStyle === 'crystal-glass') {
     cardBorderClass = 'border border-white/30';
-    cardBgColor = `rgba(255, 255, 255, ${Math.min(Math.max(opacityVal * 0.18, 0.04), 0.12)})`;
+    // Dynamic specular glass lighting scaling seamlessly with opacityVal (0.0 to 1.0)
+    const glassDarkness = Math.min(0.96, opacityVal * 0.92);
+    const glassWhiteTop = Math.min(0.35, 0.05 + opacityVal * 0.25);
+    const glassWhiteBottom = Math.min(0.2, 0.02 + opacityVal * 0.12);
+    const borderAlpha = Math.min(0.65, 0.15 + opacityVal * 0.35);
+
+    cardBgColor = `rgba(10, 12, 18, ${glassDarkness})`;
     extraCardStyles = {
-      backdropFilter: 'blur(28px) saturate(190%)',
-      WebkitBackdropFilter: 'blur(28px) saturate(190%)',
-      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.03) 40%, rgba(255, 255, 255, 0.06) 100%)',
-      boxShadow: '0 25px 60px rgba(0, 0, 0, 0.65), inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.6), inset 0 0 25px 0 rgba(255, 255, 255, 0.08)',
-      borderColor: 'rgba(255, 255, 255, 0.28)',
+      backdropFilter: `blur(${blurPx}px) saturate(180%)`,
+      WebkitBackdropFilter: `blur(${blurPx}px) saturate(180%)`,
+      background: `linear-gradient(135deg, rgba(255, 255, 255, ${glassWhiteTop}) 0%, rgba(10, 12, 18, ${glassDarkness}) 40%, rgba(255, 255, 255, ${glassWhiteBottom}) 100%)`,
+      boxShadow: `0 25px 60px rgba(0, 0, 0, ${0.25 + opacityVal * 0.5}), inset 0 1px 1.5px 0 rgba(255, 255, 255, ${0.25 + opacityVal * 0.45}), inset 0 0 25px 0 rgba(255, 255, 255, 0.06)`,
+      borderColor: `rgba(255, 255, 255, ${borderAlpha})`,
     };
   } else if (cardStyle === 'frosted-square') {
     cardBorderClass = 'border border-white/20 shadow-2xl';
-    cardBgColor = `rgba(10, 10, 14, ${Math.max(opacityVal, 0.65)})`;
+    cardBgColor = `rgba(10, 10, 14, ${opacityVal})`;
   } else if (cardStyle === 'frosted-soft') {
     cardBorderClass = 'border border-white/15 shadow-[0_12px_40px_rgba(0,0,0,0.5)]';
     cardBgColor = `rgba(24, 24, 32, ${opacityVal})`;
   } else if (cardStyle === 'neon') {
     cardBorderClass = 'border-2';
-    cardBgColor = `rgba(12, 13, 18, ${Math.max(opacityVal, 0.75)})`;
+    cardBgColor = `rgba(12, 13, 18, ${opacityVal})`;
     extraCardStyles = {
       borderColor: accent,
       boxShadow: `0 0 25px ${glow}50, inset 0 0 15px ${glow}20`,
     };
   } else if (cardStyle === 'cyber') {
     cardBorderClass = 'border border-white/20 border-t-2 border-b-2 shadow-2xl';
-    cardBgColor = `rgba(8, 10, 15, ${Math.max(opacityVal, 0.85)})`;
+    cardBgColor = `rgba(8, 10, 15, ${opacityVal})`;
     extraCardStyles = {
       borderTopColor: accent,
       borderBottomColor: accent,
@@ -545,7 +551,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
             <div
               className="absolute -top-[40%] -left-[40%] w-[180%] h-[180%] pointer-events-none select-none z-0"
               style={{
-                background: 'linear-gradient(125deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 25%, transparent 55%)',
+                background: `linear-gradient(125deg, rgba(255,255,255,${0.08 + opacityVal * 0.16}) 0%, rgba(255,255,255,${0.02 + opacityVal * 0.04}) 25%, transparent 55%)`,
                 transform: 'rotate(-12deg)',
               }}
             />

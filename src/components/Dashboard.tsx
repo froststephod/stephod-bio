@@ -1275,66 +1275,85 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                     </div>
                   </div>
 
-                  {/* Advanced Sliders */}
+                  {/* Card Opacity & Glass Blur Sliders - Always Visible */}
+                  <div className="space-y-3.5 pt-3 border-t border-white/10">
+                    <div>
+                      <div className="flex justify-between items-center text-xs text-white/80 mb-1.5 font-medium">
+                        <span>ความทึบของการ์ด (Card Opacity)</span>
+                        <span className="px-2 py-0.5 rounded-md bg-white/10 text-emerald-400 font-mono text-xs font-semibold">
+                          {profile.theme.cardOpacity ?? 30}%
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={profile.theme.cardOpacity ?? 30}
+                        onChange={(e) =>
+                          setProfile({
+                            ...profile,
+                            theme: { ...profile.theme, cardOpacity: Number(e.target.value) },
+                          })
+                        }
+                        className="w-full accent-emerald-500 cursor-pointer h-2 bg-white/10 rounded-lg appearance-none"
+                      />
+                      <div className="flex justify-between text-[10px] text-white/40 mt-1">
+                        <span>โปร่งใส (0%)</span>
+                        <span>ค่าเริ่มต้น (30%)</span>
+                        <span>ทึบแสง (100%)</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between items-center text-xs text-white/80 mb-1.5 font-medium">
+                        <span>ความเบลอของกระจก (Glass Blur)</span>
+                        <span className="px-2 py-0.5 rounded-md bg-white/10 text-emerald-400 font-mono text-xs font-semibold">
+                          {profile.theme.cardBlur ?? 16}px
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="50"
+                        step="1"
+                        value={profile.theme.cardBlur ?? 16}
+                        onChange={(e) =>
+                          setProfile({
+                            ...profile,
+                            theme: { ...profile.theme, cardBlur: Number(e.target.value) },
+                          })
+                        }
+                        className="w-full accent-emerald-500 cursor-pointer h-2 bg-white/10 rounded-lg appearance-none"
+                      />
+                      <div className="flex justify-between text-[10px] text-white/40 mt-1">
+                        <span>คมชัด (0px)</span>
+                        <span>กระจกฝ้า (16px)</span>
+                        <span>เบลอเข้ม (50px)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Advanced Sliders (Custom Radius) */}
                   {cardAdvanced && (
                     <div className="space-y-3 pt-3 border-t border-white/10 animate-in fade-in">
                       <div>
                         <div className="flex justify-between text-xs text-white/70 mb-1">
-                          <span>Card Opacity (ความทึบของการ์ด)</span>
-                          <span>{profile.theme.cardOpacity}%</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="5"
-                          max="95"
-                          value={profile.theme.cardOpacity}
-                          onChange={(e) =>
-                            setProfile({
-                              ...profile,
-                              theme: { ...profile.theme, cardOpacity: Number(e.target.value) },
-                            })
-                          }
-                          className="w-full accent-emerald-500"
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between text-xs text-white/70 mb-1">
-                          <span>Glass Blur (ความเบลอของกระจก)</span>
-                          <span>{profile.theme.cardBlur}px</span>
+                          <span>Corner Radius (ความโค้งมนของการ์ดแบบละเอียด)</span>
+                          <span>{profile.theme.cardRadius ?? 24}px</span>
                         </div>
                         <input
                           type="range"
                           min="0"
                           max="40"
-                          value={profile.theme.cardBlur}
-                          onChange={(e) =>
-                            setProfile({
-                              ...profile,
-                              theme: { ...profile.theme, cardBlur: Number(e.target.value) },
-                            })
-                          }
-                          className="w-full accent-emerald-500"
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between text-xs text-white/70 mb-1">
-                          <span>Corner Radius (ความโค้งมนของการ์ด)</span>
-                          <span>{profile.theme.cardRadius}px</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0"
-                          max="40"
-                          value={profile.theme.cardRadius}
+                          value={profile.theme.cardRadius ?? 24}
                           onChange={(e) =>
                             setProfile({
                               ...profile,
                               theme: { ...profile.theme, cardRadius: Number(e.target.value) },
                             })
                           }
-                          className="w-full accent-emerald-500"
+                          className="w-full accent-emerald-500 cursor-pointer h-2 bg-white/10 rounded-lg appearance-none"
                         />
                       </div>
                     </div>
