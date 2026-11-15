@@ -212,15 +212,17 @@ export async function registerUser(
   inMemoryAccounts[username] = account;
   persistAccounts();
 
-  // 2. Sync to Cloud KV resiliently
-  kvSet(`usr_acc_${username}`, account).catch((err) => {
+  // 2. Sync to Cloud KV resiliently (must await before serverless container frozen)
+  try {
+    await kvSet(`usr_acc_${username}`, account);
+  } catch (err) {
     console.warn('kvSet usr_acc background sync notice:', err);
-  });
+  }
 
   // 3. Create initial profile
   const profile = createDefaultProfileForUser(username, displayName);
   await saveProfileAsync(profile);
-  addToUserIndex(username).catch(() => {});
+  await addToUserIndex(username).catch(() => {});
 
   const authUser: AuthUser = {
     id: username,
