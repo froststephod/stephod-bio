@@ -250,9 +250,22 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
     setProfile(newProfile);
   };
 
-  // Save changes to API
+  // Save changes to API (Instant optimistic cross-tab sync & background API save)
   const handleSave = async () => {
     setSaving(true);
+
+    // ⚡ Optimistic Instant Broadcast (0ms cross-tab latency)
+    try {
+      localStorage.setItem('stephod_profile_' + profile.username.toLowerCase(), JSON.stringify(profile));
+      localStorage.setItem('stephod_profile_sync', Date.now().toString());
+      document.cookie = `stephod_p_${profile.username.toLowerCase()}=${encodeURIComponent(JSON.stringify(profile))}; path=/; max-age=86400`;
+      if (typeof BroadcastChannel !== 'undefined') {
+        const bc = new BroadcastChannel('stephod_live_sync');
+        bc.postMessage({ type: 'UPDATE_PROFILE', profile });
+        bc.close();
+      }
+    } catch {}
+
     try {
       const res = await fetch('/api/profiles', {
         method: 'POST',
@@ -266,7 +279,11 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
         try {
           localStorage.setItem('stephod_profile_' + data.profile.username.toLowerCase(), JSON.stringify(data.profile));
           localStorage.setItem('stephod_profile_sync', Date.now().toString());
-          document.cookie = `stephod_p_${data.profile.username.toLowerCase()}=${encodeURIComponent(JSON.stringify(data.profile))}; path=/; max-age=86400`;
+          if (typeof BroadcastChannel !== 'undefined') {
+            const bc = new BroadcastChannel('stephod_live_sync');
+            bc.postMessage({ type: 'UPDATE_PROFILE', profile: data.profile });
+            bc.close();
+          }
         } catch {}
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 2500);

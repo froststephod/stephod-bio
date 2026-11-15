@@ -5,6 +5,8 @@ import React, { useState, useEffect, useRef } from 'react';
 interface Props {
   text: string;
   effects?: string[];
+  speed?: number;
+  pause?: number;
   className?: string;
   style?: React.CSSProperties;
   as?: 'span' | 'h1' | 'h2' | 'p' | 'div';
@@ -15,6 +17,8 @@ const SCRAMBLE_CHARS = '!<>-_\\/[]{}—=+*^?#________ABCDEF0123456789';
 export default function AnimatedTextEffect({
   text,
   effects = [],
+  speed: customSpeed,
+  pause: customPause,
   className = '',
   style = {},
   as: Component = 'span',
@@ -46,7 +50,7 @@ export default function AnimatedTextEffect({
     return () => clearInterval(interval);
   }, [hasLoading]);
 
-  // 2. Typewriter Effect
+  // 2. Typewriter Effect (Fast, snappy, responsive)
   useEffect(() => {
     if (!hasTypewriter) {
       if (!hasMorph && !hasScramble) {
@@ -56,7 +60,10 @@ export default function AnimatedTextEffect({
     }
 
     const currentPhrase = phrases[phraseIndex % phrases.length];
-    const speed = isDeleting ? 35 : 85;
+    const typingSpeed = customSpeed || 35;
+    const deletingSpeed = Math.max(10, Math.floor(typingSpeed * 0.45));
+    const pauseTime = customPause || 550;
+    const currentSpeed = isDeleting ? deletingSpeed : typingSpeed;
 
     const timeout = setTimeout(() => {
       if (!isDeleting) {
@@ -64,7 +71,7 @@ export default function AnimatedTextEffect({
         if (displayText.length + 1 >= currentPhrase.length) {
           // Pause before deleting if multiple phrases, or keep steady
           if (phrases.length > 1) {
-            setTimeout(() => setIsDeleting(true), 1800);
+            setTimeout(() => setIsDeleting(true), pauseTime);
           }
         }
       } else {
@@ -74,12 +81,12 @@ export default function AnimatedTextEffect({
           setPhraseIndex((prev) => (prev + 1) % phrases.length);
         }
       }
-    }, speed);
+    }, currentSpeed);
 
     return () => clearTimeout(timeout);
-  }, [hasTypewriter, displayText, isDeleting, phraseIndex, phrases]);
+  }, [hasTypewriter, displayText, isDeleting, phraseIndex, phrases, customSpeed, customPause]);
 
-  // 3. Morph Effect (Fade transition between phrases)
+  // 3. Morph Effect (Fade transition between phrases - fast 1.2s switch)
   useEffect(() => {
     if (!hasMorph || hasTypewriter) return;
     if (phrases.length <= 1) {
@@ -96,8 +103,8 @@ export default function AnimatedTextEffect({
           return next;
         });
         setMorphOpacity(1);
-      }, 400);
-    }, 2800);
+      }, 200);
+    }, 1250);
 
     setDisplayText(phrases[0] || '');
     return () => clearInterval(interval);

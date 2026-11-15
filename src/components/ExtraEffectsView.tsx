@@ -446,6 +446,62 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
           </div>
         </div>
 
+        {/* Typewriter & Text Transition Speed Controller */}
+        <div className="p-4 rounded-2xl border border-white/10 bg-white/[0.02] space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-emerald-400" />
+              <span className="text-xs font-bold text-white">ความเร็วสลับข้อความ & พิมพ์ดีด</span>
+            </div>
+            <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+              {(currentEffects.typewriterSpeed || profile.theme.typewriterSpeed || 35) <= 22
+                ? '🚀 ขั้นสุด (Turbo)'
+                : (currentEffects.typewriterSpeed || profile.theme.typewriterSpeed || 35) <= 40
+                ? '⚡ เร็วทันใจ (Fast)'
+                : '⏱️ ปานกลาง (Normal)'}
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: '⚡ เร็วทันใจ', speed: 35, pause: 500, desc: 'พิมพ์เร็ว สลับไว (แนะนำ)' },
+              { label: '🚀 เร็วขั้นสุด', speed: 18, pause: 300, desc: 'พิมพ์เทอร์โบ สลับทันที' },
+              { label: '⏱️ ปานกลาง', speed: 70, pause: 1000, desc: 'จังหวะมาตรฐาน' },
+            ].map((opt) => {
+              const currentSpeed = currentEffects.typewriterSpeed || profile.theme.typewriterSpeed || 35;
+              const active = currentSpeed === opt.speed;
+              return (
+                <button
+                  key={opt.speed}
+                  type="button"
+                  onClick={() => {
+                    updateEffects({ typewriterSpeed: opt.speed, pauseDuration: opt.pause });
+                    onUpdateProfile({
+                      ...profile,
+                      theme: {
+                        ...profile.theme,
+                        typewriterSpeed: opt.speed,
+                        extraEffects: {
+                          ...currentEffects,
+                          typewriterSpeed: opt.speed,
+                          pauseDuration: opt.pause,
+                        },
+                      },
+                    });
+                  }}
+                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                    active
+                      ? 'border-emerald-500 bg-emerald-500/15 text-white shadow-[0_0_15px_rgba(16,185,129,0.25)]'
+                      : 'border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20 hover:text-white'
+                  }`}
+                >
+                  <div className="text-xs font-bold truncate">{opt.label}</div>
+                  <div className="text-[10px] text-white/40 mt-0.5 truncate">{opt.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Big Bright Green Save Button */}
         <div className="pt-2">
           <button

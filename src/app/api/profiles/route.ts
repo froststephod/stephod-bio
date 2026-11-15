@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllProfiles, saveProfileAsync } from '@/lib/storage';
+import { getAllProfiles, saveProfile, pushProfileToCloud } from '@/lib/storage';
 import { ProfileData } from '@/types/profile';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
@@ -24,10 +26,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid username format' }, { status: 400 });
     }
 
-    const saved = await saveProfileAsync({
+    const saved = saveProfile({
       ...body,
       username: cleanUsername,
     });
+
+    // Fire cloud KV persistence in the background (non-blocking for instant <20ms save response)
+    pushProfileToCloud(saved).catch((e) => console.warn('Cloud KV push:', e));
 
     const res = NextResponse.json({ success: true, profile: saved });
     res.cookies.set(`stephod_p_${cleanUsername}`, encodeURIComponent(JSON.stringify(saved)), {

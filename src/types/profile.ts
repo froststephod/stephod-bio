@@ -25,6 +25,8 @@ export interface ExtraEffectsConfig {
   glowIcons?: boolean; // ไอคอนเรืองแสง
   borderBeam?: boolean; // แสงวิ่งตามขอบ
   audioVisualizer?: boolean; // วิชวลไลเซอร์เสียง
+  typewriterSpeed?: number; // ความเร็วพิมพ์ดีด (ms per char) e.g. 35ms
+  pauseDuration?: number; // ระยะเวลาหยุดรอคำถัดไป (ms) e.g. 500ms
 }
 
 export interface ThemeConfig {

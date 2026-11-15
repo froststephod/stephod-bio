@@ -29,11 +29,27 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
     setProfile(initialProfile);
   }, [initialProfile]);
 
-  // Live real-time auto-sync: Tab synchronization & periodic background poll
+  // Live real-time auto-sync: BroadcastChannel (0ms), Tab synchronization & periodic background poll
   useEffect(() => {
     if (isPreview) return;
 
-    // A) Listen for localStorage change from Dashboard tab (instant cross-tab sync)
+    // A) BroadcastChannel for instantaneous (0ms) cross-tab update
+    let bc: BroadcastChannel | null = null;
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        bc = new BroadcastChannel('stephod_live_sync');
+        bc.onmessage = (event) => {
+          if (
+            event.data?.profile &&
+            event.data.profile.username?.toLowerCase() === profile.username.toLowerCase()
+          ) {
+            setProfile(event.data.profile);
+          }
+        };
+      } catch {}
+    }
+
+    // B) Listen for localStorage change from Dashboard tab
     const handleStorage = (e: StorageEvent) => {
       if (
         e.key === 'stephod_profile_' + profile.username.toLowerCase() ||
@@ -52,7 +68,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
     };
     window.addEventListener('storage', handleStorage);
 
-    // B) Re-fetch whenever tab gets focused
+    // C) Rapid background sync & re-fetch on focus
     const syncLatest = async () => {
       try {
         const raw = localStorage.getItem('stephod_profile_' + profile.username.toLowerCase());
@@ -76,9 +92,12 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
     };
 
     window.addEventListener('focus', syncLatest);
-    const interval = setInterval(syncLatest, 4000);
+    const interval = setInterval(syncLatest, 1500);
 
     return () => {
+      if (bc) {
+        try { bc.close(); } catch {}
+      }
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('focus', syncLatest);
       clearInterval(interval);
@@ -172,18 +191,29 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
     return () => clearInterval(interval);
   }, [profile.username, isPreview]);
 
-  // Typewriter effect for titles
+  // Typewriter effect for titles (Fast, crisp & snappy transition)
   useEffect(() => {
     if (!profile.titles || profile.titles.length === 0) return;
 
     const currentTitle = profile.titles[currentTitleIndex % profile.titles.length];
-    const speed = isDeleting ? 40 : (profile.theme.typewriterSpeed || 90);
+    const baseSpeed =
+      profile.theme.extraEffects?.typewriterSpeed ||
+      (profile.theme.typewriterSpeed && profile.theme.typewriterSpeed < 70
+        ? profile.theme.typewriterSpeed
+        : 35);
+    const typingSpeed = baseSpeed;
+    const deleteSpeed = Math.max(10, Math.floor(baseSpeed * 0.45));
+    const pauseTime =
+      profile.theme.extraEffects?.pauseDuration ||
+      (baseSpeed <= 22 ? 300 : baseSpeed <= 40 ? 550 : 900);
+
+    const speed = isDeleting ? deleteSpeed : typingSpeed;
 
     const timer = setTimeout(() => {
       if (!isDeleting) {
         setDisplayedText(currentTitle.substring(0, displayedText.length + 1));
-        if (displayedText.length + 1 === currentTitle.length) {
-          setTimeout(() => setIsDeleting(true), 1600); // pause at full word
+        if (displayedText.length + 1 >= currentTitle.length) {
+          setTimeout(() => setIsDeleting(true), pauseTime); // pause at full word (snappy 550ms)
         }
       } else {
         setDisplayedText(currentTitle.substring(0, displayedText.length - 1));
@@ -195,7 +225,15 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
     }, speed);
 
     return () => clearTimeout(timer);
-  }, [displayedText, isDeleting, currentTitleIndex, profile.titles, profile.theme.typewriterSpeed]);
+  }, [
+    displayedText,
+    isDeleting,
+    currentTitleIndex,
+    profile.titles,
+    profile.theme.typewriterSpeed,
+    profile.theme.extraEffects?.typewriterSpeed,
+    profile.theme.extraEffects?.pauseDuration,
+  ]);
 
   const handleEnter = () => {
     setHasEntered(true);
@@ -240,6 +278,14 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
   const blurPx = profile.theme.cardBlur ?? 16;
   const opacityVal = (profile.theme.cardOpacity ?? 35) / 100;
   const radiusPx = profile.theme.cardRadius ?? 24;
+  const baseTypewriterSpeed =
+    profile.theme.extraEffects?.typewriterSpeed ||
+    (profile.theme.typewriterSpeed && profile.theme.typewriterSpeed < 70
+      ? profile.theme.typewriterSpeed
+      : 35);
+  const basePauseDuration =
+    profile.theme.extraEffects?.pauseDuration ||
+    (baseTypewriterSpeed <= 22 ? 300 : baseTypewriterSpeed <= 40 ? 550 : 900);
   const spotifyInfo = profile.audio?.enabled ? getSpotifyInfo(profile.audio.audioUrl) : null;
 
   // New features: Layout, Card Style, Corner Shape, Custom Colors & Fonts
@@ -498,6 +544,8 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                   <AnimatedTextEffect
                     text={profile.displayName || profile.username}
                     effects={profile.theme.extraEffects?.nameEffects || []}
+                    speed={baseTypewriterSpeed}
+                    pause={basePauseDuration}
                     as="span"
                   />
                 </h1>
@@ -560,6 +608,8 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                   <AnimatedTextEffect
                     text={profile.bio}
                     effects={profile.theme.extraEffects?.bioEffects || []}
+                    speed={baseTypewriterSpeed}
+                    pause={basePauseDuration}
                     as="span"
                   />
                 </p>
@@ -719,6 +769,8 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                     <AnimatedTextEffect
                     text={profile.displayName || profile.username}
                     effects={profile.theme.extraEffects?.nameEffects || []}
+                    speed={baseTypewriterSpeed}
+                    pause={basePauseDuration}
                     as="span"
                   />
                   </h1>
@@ -821,6 +873,8 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                                      <AnimatedTextEffect
                         text={profile.bio}
                         effects={profile.theme.extraEffects?.bioEffects || []}
+                        speed={baseTypewriterSpeed}
+                        pause={basePauseDuration}
                         as="span"
                       />
                     </p>
@@ -930,6 +984,8 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                       <AnimatedTextEffect
                     text={profile.displayName || profile.username}
                     effects={profile.theme.extraEffects?.nameEffects || []}
+                    speed={baseTypewriterSpeed}
+                    pause={basePauseDuration}
                     as="span"
                   />
                     </h1>
@@ -1007,6 +1063,8 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                                  <AnimatedTextEffect
                         text={profile.bio}
                         effects={profile.theme.extraEffects?.bioEffects || []}
+                        speed={baseTypewriterSpeed}
+                        pause={basePauseDuration}
                         as="span"
                       />
                 </p>

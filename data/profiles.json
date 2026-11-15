@@ -95,13 +95,15 @@
       "backgroundType": "stars",
       "customCursor": true,
       "glowEffect": true,
-      "typewriterSpeed": 90,
+      "typewriterSpeed": 35,
       "layout": "center",
       "extraEffects": {
         "nameEffects": [
           "typewriter"
         ],
         "bioEffects": [],
+        "typewriterSpeed": 35,
+        "pauseDuration": 500,
         "pageOverlay": "none",
         "cursorTrail": "none",
         "bgEffect": "none",
