@@ -22,7 +22,11 @@ export async function GET(
       profile.views = newViews;
     }
 
-    return NextResponse.json({ success: true, profile });
+    const res = NextResponse.json({ success: true, profile });
+    res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+    res.headers.set('CDN-Cache-Control', 'no-store');
+    res.headers.set('Vercel-CDN-Cache-Control', 'no-store');
+    return res;
   } catch {
     return NextResponse.json({ success: false, error: 'Failed to fetch profile' }, { status: 500 });
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Save,
   ExternalLink,
@@ -142,6 +142,22 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
   const [cardAdvanced, setCardAdvanced] = useState(false);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const bcRef = useRef<BroadcastChannel | null>(null);
+  const isFirstMountRef = useRef(true);
+
+  // Maintain long-lived BroadcastChannel for 0ms cross-tab real-time sync
+  useEffect(() => {
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        bcRef.current = new BroadcastChannel('stephod_live_sync');
+      } catch {}
+    }
+    return () => {
+      try {
+        bcRef.current?.close();
+      } catch {}
+    };
+  }, []);
 
   // Check auth session on mount
   useEffect(() => {
@@ -253,18 +269,17 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
   };
 
   // Save changes to API (Instant optimistic cross-tab sync & background API save)
-  const handleSave = async () => {
-    setSaving(true);
+  const handleSave = async (isAuto?: boolean | React.MouseEvent) => {
+    const auto = isAuto === true;
+    if (!auto) setSaving(true);
 
     // ⚡ Optimistic Instant Broadcast (0ms cross-tab latency)
     try {
       localStorage.setItem('stephod_profile_' + profile.username.toLowerCase(), JSON.stringify(profile));
       localStorage.setItem('stephod_profile_sync', Date.now().toString());
       document.cookie = `stephod_p_${profile.username.toLowerCase()}=${encodeURIComponent(JSON.stringify(profile))}; path=/; max-age=86400`;
-      if (typeof BroadcastChannel !== 'undefined') {
-        const bc = new BroadcastChannel('stephod_live_sync');
-        bc.postMessage({ type: 'UPDATE_PROFILE', profile });
-        bc.close();
+      if (bcRef.current) {
+        bcRef.current.postMessage({ type: 'UPDATE_PROFILE', profile });
       }
     } catch {}
 
@@ -277,28 +292,50 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
       const data = await res.json();
       if (data.success) {
         setProfiles((prev) => ({ ...prev, [data.profile.username]: data.profile }));
-        setProfile(data.profile);
         try {
           localStorage.setItem('stephod_profile_' + data.profile.username.toLowerCase(), JSON.stringify(data.profile));
           localStorage.setItem('stephod_profile_sync', Date.now().toString());
-          if (typeof BroadcastChannel !== 'undefined') {
-            const bc = new BroadcastChannel('stephod_live_sync');
-            bc.postMessage({ type: 'UPDATE_PROFILE', profile: data.profile });
-            bc.close();
+          if (bcRef.current) {
+            bcRef.current.postMessage({ type: 'UPDATE_PROFILE', profile: data.profile });
           }
         } catch {}
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 2500);
-      } else {
+      } else if (!auto) {
         alert(data.error || 'Failed to save');
       }
     } catch (err) {
       console.error(err);
-      alert('Error saving profile');
+      if (!auto) alert('Error saving profile');
     } finally {
-      setSaving(false);
+      if (!auto) setSaving(false);
     }
   };
+
+  // Instant local broadcast whenever profile edits in dashboard (0ms latency to profile tabs)
+  useEffect(() => {
+    if (!profile || !profile.username) return;
+    try {
+      localStorage.setItem('stephod_profile_' + profile.username.toLowerCase(), JSON.stringify(profile));
+      localStorage.setItem('stephod_profile_sync', Date.now().toString());
+      if (bcRef.current) {
+        bcRef.current.postMessage({ type: 'UPDATE_PROFILE', profile });
+      }
+    } catch {}
+  }, [profile]);
+
+  // Debounced auto-save to cloud (1.2s after user pauses editing)
+  useEffect(() => {
+    if (isFirstMountRef.current) {
+      isFirstMountRef.current = false;
+      return;
+    }
+    if (!profile || !profile.username) return;
+    const timer = setTimeout(() => {
+      handleSave(true);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [profile]);
 
   const handleCopyLink = () => {
     if (typeof window !== 'undefined') {

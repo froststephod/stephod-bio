@@ -385,6 +385,15 @@ export default function AdminPage() {
     }
   }
 
+  function broadcastProfileUpdate(profile: any) {
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        const bc = new BroadcastChannel('stephod_live_sync');
+        bc.postMessage({ type: 'UPDATE_PROFILE', profile });
+      }
+    } catch {}
+  }
+
   // Open edit user modal
   async function openEditUser(username: string) {
     try {
@@ -415,6 +424,7 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (data.success) {
+        if (data.profile) broadcastProfileUpdate(data.profile);
         setEditingUser(null);
         fetchUsers();
         fetchAudit();
@@ -484,6 +494,7 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (data.success && data.profile) {
+        broadcastProfileUpdate(data.profile);
         setBadgeModalUser(data.profile);
         fetchUsers();
         fetchAudit();

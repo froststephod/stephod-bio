@@ -162,7 +162,7 @@ export async function pushProfileToCloud(profile: ProfileData): Promise<boolean>
   const key = profile.username.toLowerCase().trim();
   const ok = await saveChunkedDoc(`pf_${key}`, profile, profileSummary(profile));
   if (ok) {
-    await addToUserIndex(key);
+    addToUserIndex(key).catch(() => {});
   } else {
     console.warn('Cloud save failed for profile', key);
   }

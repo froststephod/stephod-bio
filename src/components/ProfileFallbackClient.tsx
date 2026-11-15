@@ -28,12 +28,12 @@ export default function ProfileFallbackClient({ username }: Props) {
         }
       }
 
-      // 2. Try fetching from api
-      fetch(`/api/profiles`)
+      // 2. Try fetching from api directly
+      fetch(`/api/profiles/${encodeURIComponent(cleanKey)}?t=${Date.now()}`, { cache: 'no-store' })
         .then((r) => r.json())
         .then((data) => {
-          if (data && data.profiles && data.profiles[cleanKey]) {
-            setProfile(data.profiles[cleanKey]);
+          if (data && data.success && data.profile) {
+            setProfile(data.profile);
           }
           setLoading(false);
         })

@@ -85,14 +85,27 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
       } catch {}
     };
 
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        syncLatest();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
     window.addEventListener('focus', syncLatest);
-    const interval = setInterval(syncLatest, 5000);
+    // Ultra-responsive poll: 1.2s when tab is active/visible
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        syncLatest();
+      }
+    }, 1200);
 
     return () => {
       if (bc) {
         try { bc.close(); } catch {}
       }
       window.removeEventListener('storage', handleStorage);
+      document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('focus', syncLatest);
       clearInterval(interval);
     };
