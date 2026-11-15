@@ -70,11 +70,11 @@ export default async function HomePage() {
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
-            href="/pun"
+            href={profiles.length > 0 ? `/${profiles[0].username}` : '/dashboard'}
             className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium text-sm transition-all flex items-center justify-center gap-2"
           >
             <Eye className="w-4 h-4 text-white/50" />
-            <span>ดูตัวอย่างโปรไฟล์</span>
+            <span>{profiles.length > 0 ? 'ดูตัวอย่างโปรไฟล์' : 'สร้างโปรไฟล์แรกของคุณ'}</span>
           </Link>
         </div>
 
@@ -126,34 +126,40 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {profiles.map((p) => (
-              <Link
-                key={p.username}
-                href={`/${p.username}`}
-                className="group p-4 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] hover:border-purple-500/50 transition-all duration-300 flex items-center gap-3.5 relative overflow-hidden"
-              >
-                <img
-                  src={p.avatarUrl}
-                  alt={p.displayName}
-                  className="w-12 h-12 rounded-full object-cover border border-white/20 group-hover:scale-105 transition-transform"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1">
-                    <span className="font-bold text-sm text-white group-hover:text-purple-300 transition-colors truncate">
-                      {p.displayName}
+          {profiles.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {profiles.map((p) => (
+                <Link
+                  key={p.username}
+                  href={`/${p.username}`}
+                  className="group p-4 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] hover:border-cyan-500/50 transition-all duration-300 flex items-center gap-3.5 relative overflow-hidden"
+                >
+                  <img
+                    src={p.avatarUrl || '/logo.png'}
+                    alt={p.displayName}
+                    className="w-12 h-12 rounded-full object-cover border border-white/20 group-hover:scale-105 transition-transform"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1">
+                      <span className="font-bold text-sm text-white group-hover:text-cyan-300 transition-colors truncate">
+                        {p.displayName}
+                      </span>
+                    </div>
+                    <span className="text-xs text-white/40 font-mono block truncate">
+                      /{p.username}
                     </span>
                   </div>
-                  <span className="text-xs text-white/40 font-mono block truncate">
-                    /{p.username}
-                  </span>
-                </div>
-                <div className="text-white/30 group-hover:text-purple-400 transition-colors">
-                  <ExternalLink className="w-4 h-4" />
-                </div>
-              </Link>
-            ))}
-          </div>
+                  <div className="text-white/30 group-hover:text-cyan-400 transition-colors">
+                    <ExternalLink className="w-4 h-4" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 rounded-3xl border border-white/5 bg-white/[0.01] text-center text-white/40 text-xs">
+              ยังไม่มีโปรไฟล์ในระบบ เข้าสู่ระบบ Dashboard เพื่อเป็นคนแรกที่สร้างโปรไฟล์!
+            </div>
+          )}
         </div>
       </main>
 
