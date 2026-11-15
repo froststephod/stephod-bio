@@ -88,6 +88,11 @@ export async function POST(req: NextRequest) {
       maxAge: 60 * 60 * 24 * 30, // 30 days
       sameSite: 'lax',
     });
+    res.cookies.set(`stephod_p_${profile.username.toLowerCase()}`, encodeURIComponent(JSON.stringify(profile)), {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30,
+      sameSite: 'lax',
+    });
 
     return res;
   } catch (err) {

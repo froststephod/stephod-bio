@@ -29,7 +29,13 @@ export async function POST(req: NextRequest) {
       username: cleanUsername,
     });
 
-    return NextResponse.json({ success: true, profile: saved });
+    const res = NextResponse.json({ success: true, profile: saved });
+    res.cookies.set(`stephod_p_${cleanUsername}`, encodeURIComponent(JSON.stringify(saved)), {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30,
+      sameSite: 'lax',
+    });
+    return res;
   } catch {
     return NextResponse.json({ success: false, error: 'Failed to save profile' }, { status: 500 });
   }

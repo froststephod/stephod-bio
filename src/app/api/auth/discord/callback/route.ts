@@ -68,6 +68,11 @@ export async function GET(req: NextRequest) {
       maxAge: 60 * 60 * 24 * 30,
       sameSite: 'lax',
     });
+    res.cookies.set(`stephod_p_${profile.username.toLowerCase()}`, encodeURIComponent(JSON.stringify(profile)), {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30,
+      sameSite: 'lax',
+    });
 
     return res;
   } catch (err) {

@@ -1,6 +1,9 @@
 import { Metadata } from 'next';
-import { getProfile, incrementViews } from '@/lib/storage';
+import { cookies } from 'next/headers';
+import { getProfile, incrementViews, saveProfile } from '@/lib/storage';
+import { SESSION_COOKIE_NAME, createOrGetProfileForDiscordUser } from '@/lib/auth';
 import ProfileView from '@/components/ProfileView';
+import ProfileFallbackClient from '@/components/ProfileFallbackClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const profile = getProfile(params.username);
   if (!profile) {
     return {
-      title: 'Profile Not Found | Yura Bio',
+      title: `${params.username} | STEPHOD Bio`,
     };
   }
 
@@ -29,34 +32,41 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default function UserProfilePage({ params }: Props) {
   const { username } = params;
-  const profile = getProfile(username);
+  let profile = getProfile(username);
+
+  // If profile not yet found on this serverless instance, check session cookie
+  if (!profile) {
+    try {
+      const cookieStore = cookies();
+      const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+      if (sessionCookie) {
+        const session = JSON.parse(sessionCookie);
+        if (
+          session &&
+          (session.profileUsername?.toLowerCase() === username.toLowerCase() ||
+            session.username?.toLowerCase() === username.toLowerCase())
+        ) {
+          profile = createOrGetProfileForDiscordUser(session);
+        }
+      }
+
+      // Check cached profile cookie
+      if (!profile) {
+        const cachedCookie = cookieStore.get(`stephod_p_${username.toLowerCase()}`)?.value;
+        if (cachedCookie) {
+          const parsed = JSON.parse(decodeURIComponent(cachedCookie));
+          if (parsed && parsed.username) {
+            profile = saveProfile(parsed);
+          }
+        }
+      }
+    } catch {
+      // Continue to client fallback
+    }
+  }
 
   if (!profile) {
-    return (
-      <div className="min-h-screen bg-[#090a0f] text-white flex flex-col items-center justify-center p-4">
-        <div className="max-w-md w-full p-8 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl text-center space-y-4">
-          <span className="text-4xl">🛸</span>
-          <h1 className="text-2xl font-bold">Profile Not Found</h1>
-          <p className="text-sm text-white/50">
-            ยังไม่มีผู้ใช้ชื่อ <span className="font-mono text-purple-400">@{username}</span> ในระบบ
-          </p>
-          <div className="pt-4 flex flex-col sm:flex-row gap-2 justify-center">
-            <a
-              href={`/dashboard`}
-              className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-semibold transition-all shadow-lg shadow-purple-600/30"
-            >
-              สร้างโปรไฟล์ชื่อนี้เลย
-            </a>
-            <a
-              href="/"
-              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-white/80 transition-all"
-            >
-              กลับหน้าหลัก
-            </a>
-          </div>
-        </div>
-      </div>
-    );
+    return <ProfileFallbackClient username={username} />;
   }
 
   // Increment view count

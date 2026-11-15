@@ -152,6 +152,10 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
           if (data.profile) {
             setProfile(data.profile);
             setSelectedUsername(data.profile.username);
+            try {
+              localStorage.setItem('stephod_profile_' + data.profile.username.toLowerCase(), JSON.stringify(data.profile));
+              document.cookie = `stephod_p_${data.profile.username.toLowerCase()}=${encodeURIComponent(JSON.stringify(data.profile))}; path=/; max-age=86400`;
+            } catch {}
           }
         }
       } catch (err) {
@@ -259,6 +263,10 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
       if (data.success) {
         setProfiles((prev) => ({ ...prev, [data.profile.username]: data.profile }));
         setProfile(data.profile);
+        try {
+          localStorage.setItem('stephod_profile_' + data.profile.username.toLowerCase(), JSON.stringify(data.profile));
+          document.cookie = `stephod_p_${data.profile.username.toLowerCase()}=${encodeURIComponent(JSON.stringify(data.profile))}; path=/; max-age=86400`;
+        } catch {}
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 2500);
       } else {
