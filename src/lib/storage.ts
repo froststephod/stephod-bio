@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { ProfileData } from '@/types/profile';
-import { saveChunkedDoc, loadChunkedDoc, tombstoneChunkedDoc, kvRead, kvSet } from './cloud-kv';
+import { saveChunkedDoc, loadChunkedDoc, tombstoneChunkedDoc, kvRead, kvSet, kvDelete } from './cloud-kv';
 
 const CLOUD_DB_TOKEN = process.env.CLOUD_DB_TOKEN || 'MQtLVyembPnxdpR74HeB';
 const CLOUD_DB_BASE = 'https://api.echovalue.dev/kv/default';
@@ -252,6 +252,14 @@ function persistProfiles() {
       fs.mkdirSync(dir, { recursive: true });
     }
     fs.writeFileSync(filePath, JSON.stringify(inMemoryProfiles, null, 2), 'utf-8');
+
+    // Also persist to repository data/profiles.json if writable
+    const seedPath = path.join(process.cwd(), 'data', 'profiles.json');
+    if (fs.existsSync(seedPath) && seedPath !== filePath) {
+      try {
+        fs.writeFileSync(seedPath, JSON.stringify(inMemoryProfiles, null, 2), 'utf-8');
+      } catch {}
+    }
   } catch (err) {
     console.warn('Storage persist note:', err);
   }
@@ -351,11 +359,23 @@ export async function pushProfileToCloud(profile: ProfileData): Promise<boolean>
 
 export async function deleteProfileFromCloud(username: string): Promise<boolean> {
   const key = username.toLowerCase().trim();
-  const ok = await tombstoneChunkedDoc(`pf_${key}`);
-  if (ok) await removeFromUserIndex(key);
   delete inMemoryProfiles[key];
   persistProfiles();
-  return ok;
+
+  // Mark tombstone in cloud KV
+  await tombstoneChunkedDoc(`pf_${key}`).catch(() => {});
+  await removeFromUserIndex(key).catch(() => {});
+
+  // Clean up legacy format keys in background
+  Promise.all([
+    kvDelete(`profile_${key}`),
+    kvDelete(`profile_${key}_social`),
+    kvDelete(`profile_${key}_theme`),
+    kvDelete(`profile_${key}_audio`),
+    kvDelete(`profile_${key}_discord`),
+  ]).catch(() => {});
+
+  return true;
 }
 
 // ---------------------------------------------------------------------------

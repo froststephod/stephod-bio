@@ -17,7 +17,7 @@ export type KvRead<T> =
   | { status: 'missing' }
   | { status: 'error' };
 
-export async function kvRead<T = any>(key: string, timeoutMs = 3000): Promise<KvRead<T>> {
+export async function kvRead<T = any>(key: string, timeoutMs = 6000): Promise<KvRead<T>> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -41,31 +41,37 @@ export async function kvRead<T = any>(key: string, timeoutMs = 3000): Promise<Kv
   }
 }
 
-export async function kvSet(key: string, value: unknown, timeoutMs = 4000): Promise<boolean> {
+export async function kvSet(key: string, value: unknown, timeoutMs = 8000): Promise<boolean> {
   const body = JSON.stringify(value);
   if (Buffer.byteLength(body, 'utf8') > MAX_BODY_BYTES) {
     console.warn(`kvSet: value for "${key}" exceeds the ${MAX_BODY_BYTES}-byte limit`);
     return false;
   }
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(`${CLOUD_DB_BASE}/${key}`, {
-      method: 'POST',
-      headers: { 'x-token': CLOUD_DB_TOKEN, 'Content-Type': 'application/json' },
-      body,
-      cache: 'no-store',
-      signal: controller.signal,
-    });
-    return res.ok;
-  } catch {
-    return false;
-  } finally {
-    clearTimeout(timer);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(`${CLOUD_DB_BASE}/${key}`, {
+        method: 'POST',
+        headers: { 'x-token': CLOUD_DB_TOKEN, 'Content-Type': 'application/json' },
+        body,
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      if (res.ok) return true;
+    } catch {
+      // Retry on network glitch
+    } finally {
+      clearTimeout(timer);
+    }
+    if (attempt === 0) {
+      await new Promise((r) => setTimeout(r, 200));
+    }
   }
+  return false;
 }
 
-export async function kvDelete(key: string, timeoutMs = 4000): Promise<boolean> {
+export async function kvDelete(key: string, timeoutMs = 6000): Promise<boolean> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
