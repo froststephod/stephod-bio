@@ -328,16 +328,21 @@ export async function setAnnouncement(
 }
 
 // ---------------------------------------------------------------------------
-// Badge presets an admin can grant (ids are prefixed "adm_" so user saves
-// can never remove them)
+// Badge presets an admin can grant from Admin Console
 // ---------------------------------------------------------------------------
 export const ADMIN_BADGE_PRESETS: Badge[] = [
-  { id: 'adm_verified', name: 'ยืนยันแล้ว (Verified)', icon: 'verified', description: 'บัญชีได้รับการยืนยันตัวตน', color: '#3b82f6' },
-  { id: 'adm_staff', name: 'ทีมงาน (Staff)', icon: 'staff', description: 'ทีมงาน STEPHOD', color: '#f59e0b' },
+  { id: 'adm_verified', name: 'ยืนยันแล้ว (Verified)', icon: 'verified', description: 'บัญชีได้รับการยืนยันตัวตน', color: '#ffffff' },
+  { id: 'adm_staff', name: 'พนักงาน (Staff)', icon: 'hammer', description: 'ทีมงานของ STEPHOD', color: '#10b981' },
   { id: 'adm_premium', name: 'พรีเมียม (Premium)', icon: 'diamond', description: 'สมาชิกพรีเมียม', color: '#ef4444' },
-  { id: 'adm_early', name: 'รุ่นแรก (Early Adopter)', icon: 'leaf', description: 'สมาชิกรุ่นแรก', color: '#10b981' },
-  { id: 'adm_popular', name: 'ยอดนิยม (Popular)', icon: 'star', description: 'โปรไฟล์ยอดนิยม', color: '#eab308' },
-  { id: 'adm_partner', name: 'พาร์ทเนอร์ (Partner)', icon: 'partner', description: 'พาร์ทเนอร์ของ STEPHOD', color: '#a855f7' },
+  { id: 'adm_early', name: 'รุ่นแรก (Early Adopter)', icon: 'leaf', description: 'รับตรารุ่นแรกจำนวนจำกัดหลังเปิดตัว', color: '#ffffff' },
+  { id: 'adm_popular', name: 'ดาวเด่น / ยอดนิยม', icon: 'star', description: 'โปรไฟล์มียอดชม 5,000 ครั้ง', color: '#ffffff' },
+  { id: 'adm_booster', name: 'บูสเตอร์ (Booster)', icon: 'booster', description: 'บูสต์เซิร์ฟเวอร์ Discord ของเราอยู่', color: '#ec4899' },
+  { id: 'adm_crown', name: 'OG สมาชิกยุคแรก', icon: 'crown', description: 'สมัครก่อนมีผู้ใช้ครบ 500 คน', color: '#f59e0b' },
+  { id: 'adm_partner', name: 'พาร์ทเนอร์ (Partner)', icon: 'heart', description: 'พาร์ทเนอร์อย่างเป็นทางการ', color: '#06b6d4' },
+  { id: 'adm_trophy', name: 'ผู้ชนะอีเวนต์', icon: 'trophy', description: 'ชนะอีเวนต์ที่จัดขึ้น', color: '#eab308' },
+  { id: 'adm_fire', name: 'กำลังมาแรง (Trending)', icon: 'fire', description: 'โปรไฟล์มียอดชม 1,000 ครั้ง', color: '#f97316' },
+  { id: 'adm_dev', name: 'นักพัฒนา (Developer)', icon: 'dev', description: 'ผู้สร้างระบบและเขียนโค้ด', color: '#3b82f6' },
+  { id: 'adm_mug', name: 'ผู้ชวนเพื่อน / ดื่มฉลอง', icon: 'mug', description: 'ชวนเพื่อน 3 คนเข้าเซิร์ฟเวอร์ Discord', color: '#ef4444' },
 ];
 
 export const ADMIN_BADGE_PREFIX = 'adm_';
@@ -345,13 +350,11 @@ export const ADMIN_BADGE_PREFIX = 'adm_';
 /** Keeps admin-granted badges and moderation flags when a user saves their own profile. */
 export function preserveAdminFields(incoming: ProfileData, existing: ProfileData | null): ProfileData {
   if (!existing) {
-    return { ...incoming, banned: undefined, banReason: undefined, bannedAt: undefined };
+    return { ...incoming, badges: [], banned: undefined, banReason: undefined, bannedAt: undefined };
   }
-  const userBadges = (incoming.badges || []).filter((b) => !b.id?.startsWith(ADMIN_BADGE_PREFIX));
-  const adminBadges = (existing.badges || []).filter((b) => b.id?.startsWith(ADMIN_BADGE_PREFIX));
   return {
     ...incoming,
-    badges: [...adminBadges, ...userBadges],
+    badges: existing.badges || [],
     banned: existing.banned,
     banReason: existing.banReason,
     bannedAt: existing.bannedAt,

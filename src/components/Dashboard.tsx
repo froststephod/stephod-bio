@@ -31,6 +31,8 @@ import {
   Flame,
   Coins,
   Crown,
+  Lock,
+  ShieldCheck,
 } from 'lucide-react';
 import { ProfileData, SocialLink, Badge, ThemeConfig, AvatarDecoration, AuthUser } from '@/types/profile';
 import ProfileView from './ProfileView';
@@ -71,7 +73,7 @@ const PRESET_BADGES: Array<{
   { id: 'b_leaf', icon: 'leaf', name: 'รุ่นแรก (Early Adopter)', description: 'รับตรารุ่นแรกจำนวนจำกัดหลังเปิดตัว', color: '#ffffff' },
   { id: 'b_booster', icon: 'booster', name: 'บูสเตอร์ (Booster)', description: 'บูสต์เซิร์ฟเวอร์ Discord ของเราอยู่', color: '#ec4899' },
   { id: 'b_crown', icon: 'crown', name: 'OG สมาชิกยุคแรก', description: 'สมัครก่อนมีผู้ใช้ครบ 500 คน', color: '#f59e0b' },
-  { id: 'b_hammer', icon: 'hammer', name: 'พนักงาน (Staff)', description: 'เป็นทีมงานของ yura.lol', color: '#10b981' },
+  { id: 'b_hammer', icon: 'hammer', name: 'พนักงาน (Staff)', description: 'ทีมงานของ STEPHOD', color: '#10b981' },
   { id: 'b_heart', icon: 'heart', name: 'พาร์ทเนอร์ (Partner)', description: 'พาร์ทเนอร์อย่างเป็นทางการ', color: '#06b6d4' },
   { id: 'b_trophy', icon: 'trophy', name: 'ผู้ชนะอีเวนต์', description: 'ชนะอีเวนต์ที่จัดขึ้น', color: '#eab308' },
   { id: 'b_fire', icon: 'fire', name: 'กำลังมาแรง (Trending)', description: 'โปรไฟล์มียอดชม 1,000 ครั้ง', color: '#f97316' },
@@ -1828,13 +1830,6 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                     <span className="text-xs font-semibold text-white/80">
                       แคปซูลเหรียญตราบนโปรไฟล์ ({profile.badges.length})
                     </span>
-                    <button
-                      onClick={addBadge}
-                      className="px-2.5 py-1 bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 rounded-lg text-xs flex items-center gap-1 text-purple-300 transition-colors"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>สร้างตราเอง</span>
-                    </button>
                   </div>
 
                   {profile.badges.length > 0 ? (
@@ -1842,120 +1837,84 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                       <BadgeBar badges={profile.badges} />
                     </div>
                   ) : (
-                    <p className="text-xs text-white/40 text-center py-2">
-                      ยังไม่มีเหรียญตราที่เลือก สามารถคลิกเลือกจากคลังด้านล่างได้เลย
+                    <p className="text-xs text-white/40 text-center py-3">
+                      ยังไม่มีเหรียญตราที่ครอบครอง (เหรียญตราทั้งหมดถูกล็อก จะได้รับจากการแต่งตั้งโดยผู้ดูแลระบบเท่านั้น)
                     </p>
                   )}
 
                   {/* List of currently equipped badges */}
                   {profile.badges.length > 0 && (
                     <div className="space-y-2 pt-2 border-t border-white/10">
-                      {profile.badges.map((badge, idx) => (
+                      {profile.badges.map((badge) => (
                         <div
                           key={badge.id}
-                          className="flex items-center gap-2 p-2 rounded-xl bg-white/5 border border-white/10"
+                          className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/10"
                         >
-                          <div
-                            className="w-7 h-7 rounded-lg bg-black/40 border border-white/10 flex items-center justify-center flex-shrink-0"
-                            style={{
-                              color: badge.color || '#fff',
-                              filter: `drop-shadow(0 0 5px ${badge.color || '#fff'})`,
-                            }}
-                          >
-                            <BadgeIcon icon={badge.icon} color={badge.color} className="w-4 h-4" />
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div
+                              className="w-7 h-7 rounded-lg bg-black/40 border border-white/10 flex items-center justify-center flex-shrink-0"
+                              style={{
+                                color: badge.color || '#fff',
+                                filter: `drop-shadow(0 0 5px ${badge.color || '#fff'})`,
+                              }}
+                            >
+                              <BadgeIcon icon={badge.icon} color={badge.color} className="w-4 h-4" />
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-medium text-white truncate">{badge.name}</div>
+                              <div className="text-[10px] text-white/50 truncate">{badge.description}</div>
+                            </div>
                           </div>
 
-                          <div className="flex-1 min-w-0">
-                            <input
-                              type="text"
-                              value={badge.name}
-                              onChange={(e) => updateBadge(idx, { name: e.target.value })}
-                              className="w-full bg-transparent text-xs font-medium text-white focus:outline-none"
-                              placeholder="ชื่อเหรียญตรา"
-                            />
-                            <input
-                              type="text"
-                              value={badge.description}
-                              onChange={(e) => updateBadge(idx, { description: e.target.value })}
-                              className="w-full bg-transparent text-[10px] text-white/50 focus:outline-none"
-                              placeholder="คำอธิบาย tooltip"
-                            />
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-[10px] font-medium shrink-0">
+                            <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                            <span>รับรองโดยระบบ</span>
                           </div>
-
-                          {/* Color Picker for Badge Glow */}
-                          <input
-                            type="color"
-                            value={badge.color || '#ffffff'}
-                            onChange={(e) => updateBadge(idx, { color: e.target.value })}
-                            className="w-6 h-6 rounded bg-transparent cursor-pointer border border-white/20"
-                            title="เลือกสีแสงนีออน (Glow Color)"
-                          />
-
-                          <button
-                            onClick={() => removeBadge(idx)}
-                            className="text-white/40 hover:text-red-400 p-1"
-                            title="ลบออก"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
 
-                {/* yura.lol Official Badge Catalog (Image 1 style) */}
+                {/* STEPHOD Badge Catalog (Locked) */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-white/90 tracking-wide uppercase font-mono">
-                      คลังตราสัญลักษณ์ (yura.lol Catalog)
+                    <div>
+                      <span className="text-xs font-semibold text-white/90 tracking-wide uppercase font-mono block">
+                        คลังตราสัญลักษณ์ (STEPHOD CATALOG)
+                      </span>
+                      <span className="text-[10px] text-white/50">
+                        เหรียญตราทั้งหมดถูกล็อก 🔒 มอบโดยผู้ดูแลระบบหรือกิจกรรมพิเศษเท่านั้น
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-amber-400 font-medium px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center gap-1">
+                      <Lock className="w-3 h-3" />
+                      <span>ล็อกทั้งหมด</span>
                     </span>
-                    <span className="text-[10px] text-purple-400">คลิกเพื่อเพิ่ม/ถอดได้ทันที</span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {PRESET_BADGES.map((preset) => {
                       const isEquipped = profile.badges.some(
-                        (b) => b.name === preset.name || b.icon === preset.icon
+                        (b) => b.name === preset.name || b.icon === preset.icon || b.id === preset.id
                       );
 
                       return (
                         <div
                           key={preset.id}
-                          onClick={() => {
-                            if (isEquipped) {
-                              setProfile({
-                                ...profile,
-                                badges: profile.badges.filter(
-                                  (b) => b.name !== preset.name && b.icon !== preset.icon
-                                ),
-                              });
-                            } else {
-                              const newBadge: Badge = {
-                                id: 'badge_' + Date.now() + Math.random(),
-                                icon: preset.icon,
-                                name: preset.name,
-                                description: preset.description,
-                                color: preset.color,
-                              };
-                              setProfile({
-                                ...profile,
-                                badges: [...profile.badges, newBadge],
-                              });
-                            }
-                          }}
-                          className={`p-2.5 rounded-2xl border text-left cursor-pointer transition-all flex items-center justify-between group ${
+                          className={`p-2.5 rounded-2xl border text-left transition-all flex items-center justify-between ${
                             isEquipped
-                              ? 'border-purple-500/60 bg-purple-500/10 shadow-lg shadow-purple-500/10'
-                              : 'border-white/10 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.06]'
+                              ? 'border-emerald-500/40 bg-emerald-500/10 shadow-lg shadow-emerald-500/10'
+                              : 'border-white/10 bg-white/[0.02] opacity-80'
                           }`}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
                             <div
-                              className="w-8 h-8 rounded-xl bg-black/50 border border-white/10 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
+                              className="w-8 h-8 rounded-xl bg-black/50 border border-white/10 flex items-center justify-center flex-shrink-0"
                               style={{
                                 color: preset.color,
-                                filter: `drop-shadow(0 0 6px ${preset.color}90)`,
+                                filter: isEquipped ? `drop-shadow(0 0 6px ${preset.color}90)` : undefined,
                               }}
                             >
                               <BadgeIcon icon={preset.icon} color={preset.color} className="w-4 h-4" />
@@ -1972,13 +1931,23 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                           </div>
 
                           <span
-                            className={`px-2 py-1 rounded-lg text-[10px] font-medium flex-shrink-0 ml-2 transition-all ${
+                            className={`px-2 py-1 rounded-lg text-[10px] font-medium flex-shrink-0 ml-2 flex items-center gap-1 ${
                               isEquipped
-                                ? 'bg-purple-600 text-white font-bold'
-                                : 'bg-white/5 text-white/60 group-hover:bg-white/10 group-hover:text-white'
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold'
+                                : 'bg-white/5 text-white/40 border border-white/10'
                             }`}
                           >
-                            {isEquipped ? 'ใช้งานอยู่ ✓' : 'รับ'}
+                            {isEquipped ? (
+                              <>
+                                <Check className="w-3 h-3" />
+                                <span>ได้รับแล้ว</span>
+                              </>
+                            ) : (
+                              <>
+                                <Lock className="w-3 h-3" />
+                                <span>ล็อก</span>
+                              </>
+                            )}
                           </span>
                         </div>
                       );

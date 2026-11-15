@@ -1652,7 +1652,9 @@ export default function AdminPage() {
 
             <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
               {badgePresets.map((preset) => {
-                const hasBadge = (badgeModalUser.badges || []).some((b) => b.id === preset.id);
+                const hasBadge = (badgeModalUser.badges || []).some(
+                  (b) => b.id === preset.id || b.name === preset.name
+                );
                 const isWorking = badgeActionLoading === preset.id;
 
                 return (
