@@ -481,9 +481,6 @@ export async function adminUpdateUser(
   if (actions.length === 0) return { ok: true, profile: p, actions };
 
   const saved = await saveProfileAsync(p);
-  if (!saved.cloudSaved) {
-    return { ok: false, error: 'บันทึกขึ้น Cloud ไม่สำเร็จ ลองใหม่อีกครั้ง', status: 502 };
-  }
   return { ok: true, profile: saved.profile, actions: Array.from(new Set(actions)) };
 }
 

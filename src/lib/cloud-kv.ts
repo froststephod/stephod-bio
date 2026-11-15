@@ -142,8 +142,14 @@ export async function saveChunkedDoc(
   if (pieces.length === 0 || pieces.length > MAX_CHUNKS) return false;
 
   const v = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  const writes = await Promise.all(pieces.map((d, i) => kvSet(`${prefix}_${i}`, { v, d })));
-  if (writes.some((ok) => !ok)) return false;
+  for (let i = 0; i < pieces.length; i++) {
+    const ok = await kvSet(`${prefix}_${i}`, { v, d: pieces[i] });
+    if (!ok) {
+      await new Promise((r) => setTimeout(r, 100));
+      const retryOk = await kvSet(`${prefix}_${i}`, { v, d: pieces[i] });
+      if (!retryOk) return false;
+    }
+  }
 
   const meta: ChunkMeta = { v, n: pieces.length, t: Date.now(), s: summary };
   return kvSet(`${prefix}_meta`, meta);
