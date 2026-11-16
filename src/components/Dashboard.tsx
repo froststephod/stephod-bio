@@ -1576,9 +1576,17 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white font-mono"
                         placeholder="https://youtu.be/... หรือ https://.../video.mp4"
                       />
-                      <p className="text-[11px] text-emerald-400 mt-1">
-                        ✨ รองรับทั้งลิงก์ YouTube (youtu.be / watch?v=) และไฟล์วิดีโอ .mp4 ระบบจะเล่นวนซ้ำอัตโนมัติ
-                      </p>
+                      <div className="mt-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-200/90 leading-relaxed space-y-1">
+                        <p className="font-semibold text-emerald-300 flex items-center gap-1.5">
+                          <span>✨</span> แนะนำความคมชัดสูงสุด (Full HD 1080p / 4K):
+                        </p>
+                        <p>
+                          • <strong>YouTube:</strong> ระบบใช้ YouTube Engine บังคับความละเอียดสูงสุด 1080p HD และซ่อนปุ่มควบคุม/ปุ่มหยุดอัตโนมัติ
+                        </p>
+                        <p>
+                          • <strong>ไฟล์ .mp4 (แนะนำที่สุด):</strong> หากต้องการภาพคมชัดระดับ 1080p/4K 60fps แท้ 100% ไม่มีปุ่ม YouTube กวนใจ แนะนำใช้ลิงก์ตรง .mp4 (เช่น จาก Discord CDN, Catbox หรือเว็บฝากไฟล์)
+                        </p>
+                      </div>
                     </div>
                   )}
 

@@ -33,6 +33,55 @@ interface Sakura {
   opacity: number;
 }
 
+// Global singleton loader for YouTube IFrame API
+let apiLoadedPromise: Promise<void> | null = null;
+function ensureYouTubeApi(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.reject();
+  if ((window as any).YT && (window as any).YT.Player) {
+    return Promise.resolve();
+  }
+  if (apiLoadedPromise) return apiLoadedPromise;
+
+  apiLoadedPromise = new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      if ((window as any).YT && (window as any).YT.Player) {
+        resolve();
+      } else {
+        reject(new Error('YouTube API load timeout'));
+      }
+    }, 4000);
+
+    const existingTag = document.getElementById('yt-iframe-api');
+    if (!existingTag) {
+      const tag = document.createElement('script');
+      tag.id = 'yt-iframe-api';
+      tag.src = 'https://www.youtube.com/iframe_api';
+      tag.onerror = () => {
+        clearTimeout(timeout);
+        reject(new Error('Failed to load YouTube API'));
+      };
+      document.head.appendChild(tag);
+    }
+
+    const prevCallback = (window as any).onYouTubeIframeAPIReady;
+    (window as any).onYouTubeIframeAPIReady = () => {
+      if (typeof prevCallback === 'function') prevCallback();
+      clearTimeout(timeout);
+      resolve();
+    };
+
+    const checkInterval = setInterval(() => {
+      if ((window as any).YT && (window as any).YT.Player) {
+        clearInterval(checkInterval);
+        clearTimeout(timeout);
+        resolve();
+      }
+    }, 50);
+  });
+
+  return apiLoadedPromise;
+}
+
 function YouTubeBackground({
   ytId,
   brightnessFactor,
@@ -44,95 +93,176 @@ function YouTubeBackground({
   overlayDarkness: number;
   canvasRef: React.RefObject<HTMLCanvasElement>;
 }) {
-  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const playerRef = useRef<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [origin, setOrigin] = useState('');
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setOrigin(window.location.origin);
-    }
+    if (!containerRef.current) return;
+    let isMounted = true;
+    containerRef.current.innerHTML = '';
 
-    const handleMessage = (e: MessageEvent) => {
-      try {
-        if (!e.data || typeof e.data !== 'string') return;
-        const data = JSON.parse(e.data);
-        if (data.event === 'infoDelivery' && data.info) {
-          if (data.info.playerState === 1) {
-            setIsPlaying(true);
-          } else if (data.info.playerState === 0) {
-            // Video ended - loop seamlessly without playlist controls
-            iframeRef.current?.contentWindow?.postMessage(
-              JSON.stringify({ event: 'command', func: 'seekTo', args: [0, true] }),
-              '*'
-            );
-            iframeRef.current?.contentWindow?.postMessage(
-              JSON.stringify({ event: 'command', func: 'playVideo' }),
-              '*'
-            );
-          }
-        }
-        if (data.event === 'onStateChange') {
-          if (data.data === 1) {
-            setIsPlaying(true);
-          } else if (data.data === 0) {
-            iframeRef.current?.contentWindow?.postMessage(
-              JSON.stringify({ event: 'command', func: 'seekTo', args: [0, true] }),
-              '*'
-            );
-            iframeRef.current?.contentWindow?.postMessage(
-              JSON.stringify({ event: 'command', func: 'playVideo' }),
-              '*'
-            );
-          }
-        }
-      } catch {}
+    const mountNode = document.createElement('div');
+    const mountId = `yt-player-${Math.random().toString(36).substring(2, 9)}`;
+    mountNode.id = mountId;
+    mountNode.className = 'w-full h-full pointer-events-none';
+    containerRef.current.appendChild(mountNode);
+
+    // User gesture listener to unblock autoplay if browser requires user interaction
+    const handleUserGesture = () => {
+      if (playerRef.current && typeof playerRef.current.playVideo === 'function') {
+        try {
+          playerRef.current.mute();
+          playerRef.current.setPlaybackQuality('hd1080');
+          playerRef.current.playVideo();
+        } catch {}
+      }
     };
+    window.addEventListener('click', handleUserGesture, { passive: true });
+    window.addEventListener('touchstart', handleUserGesture, { passive: true });
+    window.addEventListener('keydown', handleUserGesture, { passive: true });
+    window.addEventListener('stephod_play_audio', handleUserGesture);
 
-    window.addEventListener('message', handleMessage);
+    ensureYouTubeApi()
+      .then(() => {
+        if (!isMounted || !containerRef.current) return;
+        const player = new (window as any).YT.Player(mountId, {
+          videoId: ytId,
+          width: '1920',
+          height: '1080',
+          playerVars: {
+            autoplay: 1,
+            mute: 1,
+            controls: 0,
+            disablekb: 1,
+            enablejsapi: 1,
+            fs: 0,
+            iv_load_policy: 3,
+            loop: 1,
+            modestbranding: 1,
+            playsinline: 1,
+            rel: 0,
+            showinfo: 0,
+            vq: 'hd1080',
+            origin: window.location.origin,
+          },
+          events: {
+            onReady: (e: any) => {
+              if (!isMounted) return;
+              try {
+                e.target.mute();
+                e.target.setPlaybackQuality('hd1080');
+                e.target.playVideo();
+              } catch {}
+            },
+            onStateChange: (e: any) => {
+              if (!isMounted) return;
+              // 1 = PLAYING
+              if (e.data === 1) {
+                setIsPlaying(true);
+                try {
+                  e.target.setPlaybackQuality('hd1080');
+                } catch {}
+              } else if (e.data === 2) {
+                // Video paused -> background should NEVER stay paused! Resume immediately!
+                try {
+                  e.target.playVideo();
+                } catch {}
+              } else if (e.data === 0) {
+                // Video ended -> loop seamlessly
+                try {
+                  e.target.seekTo(0, true);
+                  e.target.playVideo();
+                } catch {}
+              }
+            },
+            onPlaybackQualityChange: (e: any) => {
+              if (!isMounted) return;
+              if (e.data !== 'hd1080' && e.data !== 'highres') {
+                try {
+                  e.target.setPlaybackQuality('hd1080');
+                } catch {}
+              }
+            },
+          },
+        });
+        playerRef.current = player;
+      })
+      .catch(() => {
+        // Fallback: If YouTube API script was blocked by adblocker, embed fallback iframe
+        if (!isMounted || !containerRef.current) return;
+        const fallbackIframe = document.createElement('iframe');
+        fallbackIframe.src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&playsinline=1&enablejsapi=1&vq=hd1080&origin=${encodeURIComponent(window.location.origin)}`;
+        fallbackIframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+        fallbackIframe.className = 'w-full h-full pointer-events-none';
+        fallbackIframe.onload = () => {
+          try {
+            fallbackIframe.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'playVideo' }), '*');
+            fallbackIframe.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'setPlaybackQuality', args: ['hd1080'] }), '*');
+          } catch {}
+          setTimeout(() => setIsPlaying(true), 1200);
+        };
+        containerRef.current.innerHTML = '';
+        containerRef.current.appendChild(fallbackIframe);
+      });
 
-    // Fallback: fade in after 1.8s in case message event is blocked by browser security
-    const timer = setTimeout(() => {
-      setIsPlaying(true);
-    }, 1800);
+    // Check & nudge player to play if delayed
+    const pollInterval = setInterval(() => {
+      if (!isMounted) return;
+      if (playerRef.current && typeof playerRef.current.getPlayerState === 'function') {
+        const state = playerRef.current.getPlayerState();
+        if (state === 1) {
+          setIsPlaying(true);
+        } else if (state === 2 || state === -1) {
+          try {
+            playerRef.current.mute();
+            playerRef.current.setPlaybackQuality('hd1080');
+            playerRef.current.playVideo();
+          } catch {}
+        }
+      }
+    }, 1000);
 
     return () => {
-      window.removeEventListener('message', handleMessage);
-      clearTimeout(timer);
+      isMounted = false;
+      clearInterval(pollInterval);
+      window.removeEventListener('click', handleUserGesture);
+      window.removeEventListener('touchstart', handleUserGesture);
+      window.removeEventListener('keydown', handleUserGesture);
+      window.removeEventListener('stephod_play_audio', handleUserGesture);
+      if (playerRef.current && typeof playerRef.current.destroy === 'function') {
+        try {
+          playerRef.current.destroy();
+        } catch {}
+      }
+      playerRef.current = null;
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
     };
-  }, []);
-
-  const handleIframeLoad = () => {
-    try {
-      iframeRef.current?.contentWindow?.postMessage(
-        JSON.stringify({ event: 'command', func: 'mute' }),
-        '*'
-      );
-      iframeRef.current?.contentWindow?.postMessage(
-        JSON.stringify({ event: 'command', func: 'playVideo' }),
-        '*'
-      );
-    } catch {}
-  };
-
-  const embedUrl = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&playsinline=1&enablejsapi=1${origin ? `&origin=${encodeURIComponent(origin)}` : ''}`;
+  }, [ytId]);
 
   return (
-    <div className="absolute inset-0 -z-0 overflow-hidden pointer-events-none bg-black">
-      {/* Zoom / scale 1.35x to push all YouTube branding, title overlays, and progress controls completely off-screen */}
-      <iframe
-        ref={iframeRef}
-        onLoad={handleIframeLoad}
-        className="w-[120vw] h-[67.5vw] min-h-[120vh] min-w-[213.33vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none scale-[1.35] transform-gpu"
-        style={{ filter: `brightness(${brightnessFactor})` }}
-        src={embedUrl}
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        title="Background Video"
-      />
+    <div className="absolute inset-0 -z-0 overflow-hidden pointer-events-none bg-[#0a0b12]">
+      {/* 
+        Container with 16:9 ratio, oversized by 1.35x and centered with absolute translate:
+        All YouTube titles, watermarks, and progress controls are completely cropped outside the viewport.
+        [&_iframe]:w-full [&_iframe]:h-full ensures the generated iframe scales to 100% of the oversized container.
+      */}
+      <div className="w-[125vw] h-[70.3vw] min-h-[125vh] min-w-[222vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none scale-[1.35] transform-gpu">
+        <div
+          ref={containerRef}
+          className="w-full h-full pointer-events-none [&_iframe]:w-full [&_iframe]:h-full [&_iframe]:pointer-events-none"
+          style={{ filter: `brightness(${brightnessFactor})` }}
+        />
+      </div>
 
-      {/* Loading Cover Veil: hides YouTube thumbnail and initial play button until video is actively playing */}
+      {/* 
+        Loading Veil: Remains 100% opaque until the video is actively in PLAYING state (data === 1).
+        This guarantees the user NEVER sees the YouTube pause symbol (❚❚), initial play button, or low-res buffering frame.
+      */}
       <div
-        className={`absolute inset-0 bg-black pointer-events-none transition-opacity duration-700 ${
+        className={`absolute inset-0 bg-[#0a0b12] pointer-events-none transition-opacity duration-700 ${
           isPlaying ? 'opacity-0' : 'opacity-100'
         }`}
       />
