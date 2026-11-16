@@ -111,7 +111,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
     };
   }, [profile.username, isPreview]);
 
-  const isClickToEnterEnabled = profile.theme?.clickToEnter !== false; // defaults to true
+  const isClickToEnterEnabled = profile.theme?.clickToEnter === true; // defaults to false (music & profile load instantly)
   const [hasEntered, setHasEntered] = useState(isPreview || !isClickToEnterEnabled);
 
   // If clickToEnter is disabled or becomes disabled, automatically reveal profile card

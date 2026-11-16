@@ -1590,7 +1590,7 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                     <label className="flex items-center gap-2.5 text-xs cursor-pointer select-none">
                       <input
                         type="checkbox"
-                        checked={profile.theme.clickToEnter !== false}
+                        checked={profile.theme.clickToEnter === true}
                         onChange={(e) =>
                           setProfile({
                             ...profile,
@@ -1604,7 +1604,7 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                       </span>
                     </label>
 
-                    {profile.theme.clickToEnter !== false && (
+                    {profile.theme.clickToEnter === true && (
                       <div className="pl-6.5 pt-1">
                         <input
                           type="text"

@@ -8,10 +8,10 @@ import { getYouTubeVideoId, getSpotifyInfo } from '@/lib/music';
 interface Props {
   audio: AudioConfig;
   accentColor: string;
-  hasEntered: boolean;
+  hasEntered?: boolean;
 }
 
-export default function AudioPlayer({ audio, accentColor, hasEntered }: Props) {
+export default function AudioPlayer({ audio, accentColor }: Props) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(audio.volume || 60);
   const [isMuted, setIsMuted] = useState(false);
@@ -23,8 +23,6 @@ export default function AudioPlayer({ audio, accentColor, hasEntered }: Props) {
   const ytId = getYouTubeVideoId(audio.audioUrl);
   const spotifyInfo = getSpotifyInfo(audio.audioUrl);
 
-  const hasEnteredRef = useRef(hasEntered);
-  hasEnteredRef.current = hasEntered;
   const volumeRef = useRef(volume);
   volumeRef.current = volume;
   const isMutedRef = useRef(isMuted);
@@ -55,7 +53,7 @@ export default function AudioPlayer({ audio, accentColor, hasEntered }: Props) {
     }
   }, []);
 
-  // Synchronous audio playback trigger
+  // Synchronous audio playback trigger (plays immediately without waiting for enter)
   const triggerAudioPlayback = useCallback(() => {
     if (!audio.enabled || !audio.audioUrl) return;
 
@@ -90,25 +88,29 @@ export default function AudioPlayer({ audio, accentColor, hasEntered }: Props) {
     }
   }, [volume, isMuted, ytId, postYTCommand]);
 
-  // When hasEntered becomes true, trigger playback immediately with sequential retries
+  // Start playing audio IMMEDIATELY on load (0 clicks required) with progressive retries
   useEffect(() => {
-    if (hasEntered && audio.enabled && audio.audioUrl) {
+    if (audio.enabled && audio.audioUrl) {
       triggerAudioPlayback();
 
       if (ytId) {
-        const t1 = setTimeout(() => triggerAudioPlayback(), 300);
-        const t2 = setTimeout(() => triggerAudioPlayback(), 700);
-        const t3 = setTimeout(() => triggerAudioPlayback(), 1500);
+        const t0 = setTimeout(() => triggerAudioPlayback(), 100);
+        const t1 = setTimeout(() => triggerAudioPlayback(), 350);
+        const t2 = setTimeout(() => triggerAudioPlayback(), 800);
+        const t3 = setTimeout(() => triggerAudioPlayback(), 1600);
+        const t4 = setTimeout(() => triggerAudioPlayback(), 2800);
         return () => {
+          clearTimeout(t0);
           clearTimeout(t1);
           clearTimeout(t2);
           clearTimeout(t3);
+          clearTimeout(t4);
         };
       }
     }
-  }, [hasEntered, audio.enabled, audio.audioUrl, ytId, triggerAudioPlayback]);
+  }, [audio.enabled, audio.audioUrl, ytId, triggerAudioPlayback]);
 
-  // Listen for custom event 'stephod_play_audio' dispatched on user enter / splash click
+  // Listen for custom event 'stephod_play_audio'
   useEffect(() => {
     const handleCustomPlay = () => {
       triggerAudioPlayback();
@@ -119,25 +121,31 @@ export default function AudioPlayer({ audio, accentColor, hasEntered }: Props) {
   }, [triggerAudioPlayback]);
 
   // Global user interaction fallback:
-  // If browser Autoplay Policy delayed playback, the very first click/tap/touch/key anywhere begins playback instantly!
+  // If browser Autoplay Policy delayed sound, the very first micro-movement (mousemove, scroll, touch, or click) unmutes/plays instantly!
   useEffect(() => {
     if (!audio.enabled || !audio.audioUrl) return;
 
     const handleUserInteraction = () => {
-      if (hasEnteredRef.current) {
-        triggerAudioPlayback();
-      }
+      triggerAudioPlayback();
     };
 
-    window.addEventListener('click', handleUserInteraction, { once: true });
+    window.addEventListener('mousemove', handleUserInteraction, { once: true, passive: true });
+    window.addEventListener('pointermove', handleUserInteraction, { once: true, passive: true });
+    window.addEventListener('scroll', handleUserInteraction, { once: true, passive: true });
+    window.addEventListener('wheel', handleUserInteraction, { once: true, passive: true });
     window.addEventListener('pointerdown', handleUserInteraction, { once: true });
-    window.addEventListener('touchstart', handleUserInteraction, { once: true });
+    window.addEventListener('touchstart', handleUserInteraction, { once: true, passive: true });
+    window.addEventListener('click', handleUserInteraction, { once: true });
     window.addEventListener('keydown', handleUserInteraction, { once: true });
 
     return () => {
-      window.removeEventListener('click', handleUserInteraction);
+      window.removeEventListener('mousemove', handleUserInteraction);
+      window.removeEventListener('pointermove', handleUserInteraction);
+      window.removeEventListener('scroll', handleUserInteraction);
+      window.removeEventListener('wheel', handleUserInteraction);
       window.removeEventListener('pointerdown', handleUserInteraction);
       window.removeEventListener('touchstart', handleUserInteraction);
+      window.removeEventListener('click', handleUserInteraction);
       window.removeEventListener('keydown', handleUserInteraction);
     };
   }, [audio.enabled, audio.audioUrl, triggerAudioPlayback]);
@@ -151,9 +159,7 @@ export default function AudioPlayer({ audio, accentColor, hasEntered }: Props) {
         if (typeof e.data === 'string') {
           const data = JSON.parse(e.data);
           if (data.event === 'onReady' || data.event === 'initialDelivery') {
-            if (hasEnteredRef.current) {
-              triggerAudioPlayback();
-            }
+            triggerAudioPlayback();
           } else if (data.event === 'onStateChange') {
             if (data.info === 1) {
               // 1 = PLAYING
@@ -177,11 +183,10 @@ export default function AudioPlayer({ audio, accentColor, hasEntered }: Props) {
 
   // Handle iframe load event
   const handleIframeLoad = () => {
-    if (hasEnteredRef.current) {
-      triggerAudioPlayback();
-      setTimeout(triggerAudioPlayback, 400);
-      setTimeout(triggerAudioPlayback, 1000);
-    }
+    triggerAudioPlayback();
+    setTimeout(triggerAudioPlayback, 250);
+    setTimeout(triggerAudioPlayback, 700);
+    setTimeout(triggerAudioPlayback, 1500);
   };
 
   const togglePlay = (e: React.MouseEvent) => {
@@ -286,6 +291,7 @@ export default function AudioPlayer({ audio, accentColor, hasEntered }: Props) {
           src={audio.audioUrl}
           loop={audio.loop}
           preload="auto"
+          autoPlay
           onEnded={() => setIsPlaying(false)}
         />
       )}
