@@ -783,9 +783,9 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
               {/* Audio Visualizer (Extra Effect) */}
               {renderAudioVisualizer()}
 
-              {/* Social Links Grid */}
+              {/* Social Links (Adaptive Flex on mobile: fits in one horizontal row, centered) */}
               {profile.socialLinks && profile.socialLinks.length > 0 && (
-                <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                <div className="mt-5 flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 max-w-full">
                   {profile.socialLinks.map((link) => {
                     const color = getSocialPlatformColor(link.platform, link.label, link.color);
                     return (
@@ -800,7 +800,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                             ? `0 0 16px ${color}45, 0 0 32px ${color}20, inset 0 0 10px ${color}20`
                             : undefined,
                         }}
-                        className={`group relative flex items-center gap-2.5 p-2.5 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 ${
+                        className={`group relative flex items-center justify-center sm:justify-start gap-2 p-2 sm:p-2.5 px-3 sm:px-3.5 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 flex-1 min-w-[90px] max-w-[150px] sm:max-w-none sm:min-w-[110px] ${
                           isGlowIcons
                             ? 'hover:scale-[1.03] bg-black/60 backdrop-blur-md hover:bg-black/80 hover:shadow-[0_0_26px_rgba(255,255,255,0.4),0_0_40px_currentColor]'
                             : 'bg-black/50 backdrop-blur-md hover:bg-black/70 hover:border-white/20'

@@ -47,6 +47,10 @@ function NativeVideoBackground({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [hasError, setHasError] = useState(false);
 
+  // Fast inline streaming endpoint for mobile Android / iOS compatibility
+  const isRemoteAsset = videoUrl.startsWith('http') && (videoUrl.includes('github') || videoUrl.includes('release'));
+  const streamUrl = isRemoteAsset ? `/api/video-stream?url=${encodeURIComponent(videoUrl)}` : videoUrl;
+
   useEffect(() => {
     setHasError(false);
     const video = videoRef.current;
@@ -55,6 +59,10 @@ function NativeVideoBackground({
     video.muted = true;
     video.defaultMuted = true;
     video.playsInline = true;
+    video.setAttribute('muted', '');
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', 'true');
+
     const playPromise = video.play();
     if (playPromise !== undefined) {
       playPromise.catch(() => {
@@ -94,6 +102,9 @@ function NativeVideoBackground({
           if (el) {
             el.muted = true;
             el.defaultMuted = true;
+            el.setAttribute('muted', '');
+            el.setAttribute('playsinline', '');
+            el.setAttribute('webkit-playsinline', 'true');
             if (el.paused) {
               el.play().catch(() => {});
             }
@@ -109,8 +120,8 @@ function NativeVideoBackground({
         className="w-full h-full object-cover transition-opacity duration-300 opacity-100"
         style={{ filter: `brightness(${brightnessFactor})` }}
       >
+        <source src={streamUrl} type="video/mp4" />
         <source src={videoUrl} type="video/mp4" />
-        <source src={videoUrl} />
       </video>
 
       {overlayDarkness > 0 && (
