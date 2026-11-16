@@ -358,6 +358,35 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
   const isViewsAnimation = !!profile.theme.extraEffects?.viewsAnimation;
   const isAudioVisualizer = !!profile.theme.extraEffects?.audioVisualizer;
 
+  const getSocialPlatformColor = (platform: string): string => {
+    switch ((platform || '').toLowerCase()) {
+      case 'discord':
+        return '#5865F2';
+      case 'tiktok':
+        return '#25F4EE';
+      case 'instagram':
+      case 'insta':
+        return '#E1306C';
+      case 'spotify':
+        return '#1DB954';
+      case 'youtube':
+        return '#FF0000';
+      case 'twitch':
+        return '#A970FF';
+      case 'steam':
+        return '#66C0F4';
+      case 'twitter':
+      case 'x':
+        return '#1DA1F2';
+      case 'telegram':
+        return '#24A1DE';
+      case 'github':
+        return '#ffffff';
+      default:
+        return accent || '#ffffff';
+    }
+  };
+
   const renderAudioVisualizer = () => {
     if (!isAudioVisualizer) return null;
     return (
@@ -768,33 +797,49 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
               {/* Social Links Grid */}
               {profile.socialLinks && profile.socialLinks.length > 0 && (
                 <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                  {profile.socialLinks.map((link) => (
-                    <a
-                      key={link.id}
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        filter: isGlowIcons ? `drop-shadow(0 0 6px ${accent}60)` : undefined,
-                      }}
-                      className={`group relative flex items-center gap-2.5 p-2.5 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 overflow-hidden ${
-                        isTransparent
-                          ? 'border-white/10 bg-black/40 backdrop-blur-md hover:bg-black/60 hover:border-white/30 shadow-lg'
-                          : 'border-white/10 bg-white/[0.04] hover:bg-white/[0.1] hover:border-white/30'
-                      }`}
-                    >
-                      <div
-                        className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300"
-                        style={{ backgroundColor: accent }}
-                      />
-                      <div className="text-white/70 group-hover:text-white transition-colors">
-                        <SocialIcon platform={link.platform} className="w-4 h-4 flex-shrink-0" />
-                      </div>
-                      <span className="text-xs font-medium text-white/80 group-hover:text-white truncate">
-                        {link.label}
-                      </span>
-                    </a>
-                  ))}
+                  {profile.socialLinks.map((link) => {
+                    const color = getSocialPlatformColor(link.platform);
+                    return (
+                      <a
+                        key={link.id}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          boxShadow: isGlowIcons ? `0 0 14px ${color}20` : undefined,
+                        }}
+                        className={`group relative flex items-center gap-2.5 p-2.5 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 overflow-hidden border-white/10 ${
+                          isTransparent
+                            ? 'bg-black/50 backdrop-blur-md hover:bg-black/70 hover:border-white/30'
+                            : 'bg-black/40 backdrop-blur-md hover:bg-black/60 hover:border-white/30'
+                        }`}
+                      >
+                        <div
+                          className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none"
+                          style={{ backgroundColor: color }}
+                        />
+                        <div
+                          className="relative flex items-center justify-center transition-transform duration-200 group-hover:scale-110 flex-shrink-0"
+                          style={{
+                            color: color,
+                            filter: isGlowIcons
+                              ? `drop-shadow(0 0 6px ${color}90) drop-shadow(0 0 2px ${color})`
+                              : undefined,
+                          }}
+                        >
+                          <SocialIcon platform={link.platform} className="w-4 h-4" />
+                        </div>
+                        <span
+                          className="text-xs font-medium text-white/90 group-hover:text-white truncate transition-all"
+                          style={{
+                            textShadow: isGlowIcons ? `0 0 8px ${color}60` : undefined,
+                          }}
+                        >
+                          {link.label}
+                        </span>
+                      </a>
+                    );
+                  })}
                 </div>
               )}
 
@@ -1009,29 +1054,49 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                   {/* Social Links Grid */}
                   {profile.socialLinks && profile.socialLinks.length > 0 && (
                     <div className="mt-4 grid grid-cols-2 gap-2">
-                      {profile.socialLinks.map((link) => (
-                        <a
-                          key={link.id}
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            filter: isGlowIcons ? `drop-shadow(0 0 6px ${accent}60)` : undefined,
-                          }}
-                          className={`group relative flex items-center gap-2 p-2 rounded-xl border transition-all overflow-hidden ${
-                            isTransparent
-                              ? 'border-white/10 bg-black/40 backdrop-blur-md hover:bg-black/60 hover:border-white/30'
-                              : 'border-white/10 bg-white/[0.04] hover:bg-white/[0.1] hover:border-white/30'
-                          }`}
-                        >
-                          <div className="text-white/70 group-hover:text-white transition-colors">
-                            <SocialIcon platform={link.platform} className="w-3.5 h-3.5 flex-shrink-0" />
-                          </div>
-                          <span className="text-xs font-medium text-white/80 group-hover:text-white truncate">
-                            {link.label}
-                          </span>
-                        </a>
-                      ))}
+                      {profile.socialLinks.map((link) => {
+                        const color = getSocialPlatformColor(link.platform);
+                        return (
+                          <a
+                            key={link.id}
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              boxShadow: isGlowIcons ? `0 0 14px ${color}20` : undefined,
+                            }}
+                            className={`group relative flex items-center gap-2 p-2 rounded-xl border transition-all overflow-hidden border-white/10 ${
+                              isTransparent
+                                ? 'bg-black/50 backdrop-blur-md hover:bg-black/70 hover:border-white/30'
+                                : 'bg-black/40 backdrop-blur-md hover:bg-black/60 hover:border-white/30'
+                            }`}
+                          >
+                            <div
+                              className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none"
+                              style={{ backgroundColor: color }}
+                            />
+                            <div
+                              className="relative flex items-center justify-center transition-transform duration-200 group-hover:scale-110 flex-shrink-0"
+                              style={{
+                                color: color,
+                                filter: isGlowIcons
+                                  ? `drop-shadow(0 0 6px ${color}90) drop-shadow(0 0 2px ${color})`
+                                  : undefined,
+                              }}
+                            >
+                              <SocialIcon platform={link.platform} className="w-3.5 h-3.5" />
+                            </div>
+                            <span
+                              className="text-xs font-medium text-white/90 group-hover:text-white truncate transition-all"
+                              style={{
+                                textShadow: isGlowIcons ? `0 0 8px ${color}60` : undefined,
+                              }}
+                            >
+                              {link.label}
+                            </span>
+                          </a>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -1176,25 +1241,34 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
               {profile.socialLinks && profile.socialLinks.length > 0 && (
                 <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2 overflow-x-auto py-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    {profile.socialLinks.map((link) => (
-                      <a
-                        key={link.id}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          filter: isGlowIcons ? `drop-shadow(0 0 6px ${accent}60)` : undefined,
-                        }}
-                        className={`p-1.5 rounded-lg border transition-all ${
-                          isTransparent
-                            ? 'border-white/10 bg-black/40 backdrop-blur-md text-white/80 hover:bg-black/60'
-                            : 'border-white/10 bg-white/[0.04] hover:bg-white/[0.1] text-white/70 hover:text-white'
-                        }`}
-                        title={link.label}
-                      >
-                        <SocialIcon platform={link.platform} className="w-3.5 h-3.5" />
-                      </a>
-                    ))}
+                    {profile.socialLinks.map((link) => {
+                      const color = getSocialPlatformColor(link.platform);
+                      return (
+                        <a
+                          key={link.id}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            boxShadow: isGlowIcons ? `0 0 10px ${color}20` : undefined,
+                          }}
+                          className={`p-1.5 rounded-lg border border-white/10 bg-black/40 backdrop-blur-md hover:bg-black/60 hover:border-white/30 transition-all`}
+                          title={link.label}
+                        >
+                          <div
+                            className="relative flex items-center justify-center transition-transform duration-200 hover:scale-110"
+                            style={{
+                              color: color,
+                              filter: isGlowIcons
+                                ? `drop-shadow(0 0 6px ${color}90) drop-shadow(0 0 2px ${color})`
+                                : undefined,
+                            }}
+                          >
+                            <SocialIcon platform={link.platform} className="w-3.5 h-3.5" />
+                          </div>
+                        </a>
+                      );
+                    })}
                   </div>
 
                   <div
