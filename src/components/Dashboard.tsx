@@ -570,6 +570,40 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
 
   return (
     <div className="min-h-screen bg-[#07080c] text-white flex">
+      {/* Global always-mounted file inputs with native ID binding */}
+      <input
+        id="input-upload-bg-video"
+        type="file"
+        ref={bgVideoInputRef}
+        onChange={(e) => handleFileUpload(e, 'bgVideo')}
+        accept="video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.webm,.mov"
+        className="hidden"
+      />
+      <input
+        id="input-upload-bg-image"
+        type="file"
+        ref={bgImageInputRef}
+        onChange={(e) => handleFileUpload(e, 'bgImage')}
+        accept="image/*"
+        className="hidden"
+      />
+      <input
+        id="input-upload-avatar"
+        type="file"
+        ref={avatarInputRef}
+        onChange={(e) => handleFileUpload(e, 'avatar')}
+        accept="image/*"
+        className="hidden"
+      />
+      <input
+        id="input-upload-banner"
+        type="file"
+        ref={bannerInputRef}
+        onChange={(e) => handleFileUpload(e, 'banner')}
+        accept="image/*"
+        className="hidden"
+      />
+
       {/* Mobile Sidebar Backdrop */}
       {mobileMenuOpen && (
         <div
@@ -1016,11 +1050,11 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="text-xs font-semibold text-white/70">Avatar Image URL</label>
-                      <button
-                        type="button"
-                        onClick={() => !uploadingField && avatarInputRef.current?.click()}
-                        disabled={uploadingField === 'avatar'}
-                        className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20"
+                      <label
+                        htmlFor="input-upload-avatar"
+                        className={`text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 cursor-pointer select-none ${
+                          uploadingField === 'avatar' ? 'opacity-50 pointer-events-none' : ''
+                        }`}
                       >
                         {uploadingField === 'avatar' ? (
                           <>
@@ -1033,15 +1067,8 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                             <span>อัปโหลดรูป</span>
                           </>
                         )}
-                      </button>
+                      </label>
                     </div>
-                    <input
-                      type="file"
-                      ref={avatarInputRef}
-                      onChange={(e) => handleFileUpload(e, 'avatar')}
-                      accept="image/*"
-                      className="hidden"
-                    />
                     <input
                       type="text"
                       value={profile.avatarUrl}
@@ -1083,11 +1110,11 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-xs font-semibold text-white/70">Card Banner (แบนเนอร์การ์ด)</label>
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => !uploadingField && bannerInputRef.current?.click()}
-                        disabled={uploadingField === 'banner'}
-                        className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20"
+                      <label
+                        htmlFor="input-upload-banner"
+                        className={`text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 cursor-pointer select-none ${
+                          uploadingField === 'banner' ? 'opacity-50 pointer-events-none' : ''
+                        }`}
                       >
                         {uploadingField === 'banner' ? (
                           <>
@@ -1100,7 +1127,7 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                             <span>อัปโหลดแบนเนอร์</span>
                           </>
                         )}
-                      </button>
+                      </label>
                       {profile.bannerUrl && (
                         <button
                           type="button"
@@ -1112,13 +1139,6 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                       )}
                     </div>
                   </div>
-                  <input
-                    type="file"
-                    ref={bannerInputRef}
-                    onChange={(e) => handleFileUpload(e, 'banner')}
-                    accept="image/*"
-                    className="hidden"
-                  />
                   <input
                     type="text"
                     value={profile.bannerUrl || ''}
@@ -1141,11 +1161,11 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => !uploadingField && bgVideoInputRef.current?.click()}
-                        disabled={uploadingField === 'bgVideo'}
-                        className="text-[11px] text-emerald-300 font-semibold hover:text-emerald-200 flex items-center gap-1.5 transition-all px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.2)]"
+                      <label
+                        htmlFor="input-upload-bg-video"
+                        className={`text-[11px] text-emerald-300 font-semibold hover:text-emerald-200 flex items-center gap-1.5 transition-all px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.2)] cursor-pointer select-none ${
+                          uploadingField === 'bgVideo' ? 'opacity-50 pointer-events-none' : ''
+                        }`}
                       >
                         {uploadingField === 'bgVideo' ? (
                           <>
@@ -1158,7 +1178,7 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                             <span>อัปโหลดวิดีโอ .mp4</span>
                           </>
                         )}
-                      </button>
+                      </label>
                       {profile.theme.backgroundVideoUrl && (
                         <button
                           type="button"
@@ -1827,21 +1847,12 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                         )}
                       </div>
 
-                      {/* Hidden File Input */}
-                      <input
-                        type="file"
-                        ref={bgImageInputRef}
-                        onChange={(e) => handleFileUpload(e, 'bgImage')}
-                        accept="image/*"
-                        className="hidden"
-                      />
-
                       {/* Upload Box */}
-                      <div
-                        onClick={() => !uploadingField && bgImageInputRef.current?.click()}
-                        className={`relative group border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all ${
+                      <label
+                        htmlFor="input-upload-bg-image"
+                        className={`block relative group border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all select-none ${
                           uploadingField === 'bgImage'
-                            ? 'border-emerald-500/50 bg-emerald-500/10'
+                            ? 'border-emerald-500/50 bg-emerald-500/10 pointer-events-none'
                             : 'border-white/15 hover:border-emerald-500/50 hover:bg-white/5'
                         }`}
                       >
@@ -1871,7 +1882,7 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                             </p>
                           </div>
                         )}
-                      </div>
+                      </label>
 
                       {/* Manual URL Input */}
                       <div className="pt-1">
@@ -1914,21 +1925,12 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                         )}
                       </div>
 
-                      {/* Hidden File Input for Video */}
-                      <input
-                        type="file"
-                        ref={bgVideoInputRef}
-                        onChange={(e) => handleFileUpload(e, 'bgVideo')}
-                        accept="video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.webm,.mov"
-                        className="hidden"
-                      />
-
                       {/* Upload Box / Dropzone */}
-                      <div
-                        onClick={() => !uploadingField && bgVideoInputRef.current?.click()}
-                        className={`relative group border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all ${
+                      <label
+                        htmlFor="input-upload-bg-video"
+                        className={`block relative group border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all select-none ${
                           uploadingField === 'bgVideo'
-                            ? 'border-emerald-500/50 bg-emerald-500/10'
+                            ? 'border-emerald-500/50 bg-emerald-500/10 pointer-events-none'
                             : 'border-white/15 hover:border-emerald-500/50 hover:bg-white/5'
                         }`}
                       >
@@ -1959,7 +1961,7 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                             </p>
                           </div>
                         )}
-                      </div>
+                      </label>
 
                       {/* Video Preview Card if set */}
                       {profile.theme.backgroundVideoUrl && (
