@@ -358,33 +358,19 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
   const isViewsAnimation = !!profile.theme.extraEffects?.viewsAnimation;
   const isAudioVisualizer = !!profile.theme.extraEffects?.audioVisualizer;
 
-  const getSocialPlatformColor = (platform: string): string => {
-    switch ((platform || '').toLowerCase()) {
-      case 'discord':
-        return '#5865F2';
-      case 'tiktok':
-        return '#25F4EE';
-      case 'instagram':
-      case 'insta':
-        return '#E1306C';
-      case 'spotify':
-        return '#1DB954';
-      case 'youtube':
-        return '#FF0000';
-      case 'twitch':
-        return '#A970FF';
-      case 'steam':
-        return '#66C0F4';
-      case 'twitter':
-      case 'x':
-        return '#1DA1F2';
-      case 'telegram':
-        return '#24A1DE';
-      case 'github':
-        return '#ffffff';
-      default:
-        return accent || '#ffffff';
-    }
+  const getSocialPlatformColor = (platform: string, label?: string): string => {
+    const raw = `${platform || ''} ${label || ''}`.toLowerCase().trim();
+    if (raw.includes('discord')) return '#5865F2';
+    if (raw.includes('tiktok') || raw.includes('tik')) return '#25F4EE';
+    if (raw.includes('instagram') || raw.includes('insta') || raw.includes('ig')) return '#E1306C';
+    if (raw.includes('spotify')) return '#1DB954';
+    if (raw.includes('youtube') || raw.includes('yt')) return '#FF0000';
+    if (raw.includes('twitch')) return '#A970FF';
+    if (raw.includes('steam')) return '#66C0F4';
+    if (raw.includes('twitter') || raw === 'x' || raw.includes(' x ')) return '#1DA1F2';
+    if (raw.includes('telegram') || raw.includes('tg')) return '#24A1DE';
+    if (raw.includes('github') || raw.includes('git')) return '#ffffff';
+    return accent || '#6366f1';
   };
 
   const renderAudioVisualizer = () => {
@@ -798,7 +784,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
               {profile.socialLinks && profile.socialLinks.length > 0 && (
                 <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                   {profile.socialLinks.map((link) => {
-                    const color = getSocialPlatformColor(link.platform);
+                    const color = getSocialPlatformColor(link.platform, link.label);
                     return (
                       <a
                         key={link.id}
@@ -806,33 +792,28 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
-                          boxShadow: isGlowIcons ? `0 0 14px ${color}20` : undefined,
+                          borderColor: `${color}80`,
+                          boxShadow: `0 0 16px ${color}45, 0 0 32px ${color}20, inset 0 0 10px ${color}20`,
                         }}
-                        className={`group relative flex items-center gap-2.5 p-2.5 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 overflow-hidden border-white/10 ${
-                          isTransparent
-                            ? 'bg-black/50 backdrop-blur-md hover:bg-black/70 hover:border-white/30'
-                            : 'bg-black/40 backdrop-blur-md hover:bg-black/60 hover:border-white/30'
-                        }`}
+                        className="group relative flex items-center gap-2.5 p-2.5 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.03] bg-black/60 backdrop-blur-md hover:bg-black/80 hover:shadow-[0_0_26px_rgba(255,255,255,0.4),0_0_40px_currentColor]"
                       >
                         <div
-                          className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none"
+                          className="absolute inset-0 rounded-xl opacity-15 group-hover:opacity-30 transition-opacity duration-300 pointer-events-none"
                           style={{ backgroundColor: color }}
                         />
                         <div
-                          className="relative flex items-center justify-center transition-transform duration-200 group-hover:scale-110 flex-shrink-0"
+                          className="relative flex items-center justify-center transition-transform duration-200 group-hover:scale-125 flex-shrink-0"
                           style={{
                             color: color,
-                            filter: isGlowIcons
-                              ? `drop-shadow(0 0 6px ${color}90) drop-shadow(0 0 2px ${color})`
-                              : undefined,
+                            filter: `drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 6px ${color}) drop-shadow(0 0 14px ${color}) drop-shadow(0 0 22px ${color})`,
                           }}
                         >
-                          <SocialIcon platform={link.platform} className="w-4 h-4" />
+                          <SocialIcon platform={link.platform} color={color} className="w-4 h-4" />
                         </div>
                         <span
-                          className="text-xs font-medium text-white/90 group-hover:text-white truncate transition-all"
+                          className="text-xs font-semibold text-white group-hover:text-white truncate transition-all"
                           style={{
-                            textShadow: isGlowIcons ? `0 0 8px ${color}60` : undefined,
+                            textShadow: `0 0 8px ${color}90, 0 0 16px ${color}50`,
                           }}
                         >
                           {link.label}
@@ -1055,7 +1036,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                   {profile.socialLinks && profile.socialLinks.length > 0 && (
                     <div className="mt-4 grid grid-cols-2 gap-2">
                       {profile.socialLinks.map((link) => {
-                        const color = getSocialPlatformColor(link.platform);
+                        const color = getSocialPlatformColor(link.platform, link.label);
                         return (
                           <a
                             key={link.id}
@@ -1063,33 +1044,28 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
-                              boxShadow: isGlowIcons ? `0 0 14px ${color}20` : undefined,
+                              borderColor: `${color}80`,
+                              boxShadow: `0 0 16px ${color}45, 0 0 32px ${color}20, inset 0 0 10px ${color}20`,
                             }}
-                            className={`group relative flex items-center gap-2 p-2 rounded-xl border transition-all overflow-hidden border-white/10 ${
-                              isTransparent
-                                ? 'bg-black/50 backdrop-blur-md hover:bg-black/70 hover:border-white/30'
-                                : 'bg-black/40 backdrop-blur-md hover:bg-black/60 hover:border-white/30'
-                            }`}
+                            className="group relative flex items-center gap-2 p-2 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.03] bg-black/60 backdrop-blur-md hover:bg-black/80 hover:shadow-[0_0_26px_rgba(255,255,255,0.4),0_0_40px_currentColor]"
                           >
                             <div
-                              className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none"
+                              className="absolute inset-0 rounded-xl opacity-15 group-hover:opacity-30 transition-opacity duration-300 pointer-events-none"
                               style={{ backgroundColor: color }}
                             />
                             <div
-                              className="relative flex items-center justify-center transition-transform duration-200 group-hover:scale-110 flex-shrink-0"
+                              className="relative flex items-center justify-center transition-transform duration-200 group-hover:scale-125 flex-shrink-0"
                               style={{
                                 color: color,
-                                filter: isGlowIcons
-                                  ? `drop-shadow(0 0 6px ${color}90) drop-shadow(0 0 2px ${color})`
-                                  : undefined,
+                                filter: `drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 6px ${color}) drop-shadow(0 0 14px ${color}) drop-shadow(0 0 22px ${color})`,
                               }}
                             >
-                              <SocialIcon platform={link.platform} className="w-3.5 h-3.5" />
+                              <SocialIcon platform={link.platform} color={color} className="w-3.5 h-3.5" />
                             </div>
                             <span
-                              className="text-xs font-medium text-white/90 group-hover:text-white truncate transition-all"
+                              className="text-xs font-semibold text-white group-hover:text-white truncate transition-all"
                               style={{
-                                textShadow: isGlowIcons ? `0 0 8px ${color}60` : undefined,
+                                textShadow: `0 0 8px ${color}90, 0 0 16px ${color}50`,
                               }}
                             >
                               {link.label}
@@ -1242,7 +1218,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                 <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2 overflow-x-auto py-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {profile.socialLinks.map((link) => {
-                      const color = getSocialPlatformColor(link.platform);
+                      const color = getSocialPlatformColor(link.platform, link.label);
                       return (
                         <a
                           key={link.id}
@@ -1250,21 +1226,20 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{
-                            boxShadow: isGlowIcons ? `0 0 10px ${color}20` : undefined,
+                            borderColor: `${color}80`,
+                            boxShadow: `0 0 14px ${color}45, inset 0 0 8px ${color}20`,
                           }}
-                          className={`p-1.5 rounded-lg border border-white/10 bg-black/40 backdrop-blur-md hover:bg-black/60 hover:border-white/30 transition-all`}
+                          className="p-1.5 rounded-lg border bg-black/60 backdrop-blur-md hover:bg-black/80 transition-all duration-300 hover:scale-110"
                           title={link.label}
                         >
                           <div
-                            className="relative flex items-center justify-center transition-transform duration-200 hover:scale-110"
+                            className="relative flex items-center justify-center transition-transform duration-200 hover:scale-125"
                             style={{
                               color: color,
-                              filter: isGlowIcons
-                                ? `drop-shadow(0 0 6px ${color}90) drop-shadow(0 0 2px ${color})`
-                                : undefined,
+                              filter: `drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 6px ${color}) drop-shadow(0 0 14px ${color})`,
                             }}
                           >
-                            <SocialIcon platform={link.platform} className="w-3.5 h-3.5" />
+                            <SocialIcon platform={link.platform} color={color} className="w-3.5 h-3.5" />
                           </div>
                         </a>
                       );

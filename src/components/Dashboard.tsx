@@ -1704,16 +1704,19 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                         <button
                           type="button"
                           onClick={() =>
-                            setProfile((prev) => ({
-                              ...prev,
-                              theme: {
-                                ...prev.theme,
-                                extraEffects: {
-                                  ...(prev.theme.extraEffects || {}),
-                                  glowIcons: prev.theme.extraEffects?.glowIcons === false ? true : false,
+                            setProfile((prev) => {
+                              const currentGlow = prev.theme.extraEffects?.glowIcons !== false;
+                              return {
+                                ...prev,
+                                theme: {
+                                  ...prev.theme,
+                                  extraEffects: {
+                                    ...(prev.theme.extraEffects || {}),
+                                    glowIcons: !currentGlow,
+                                  },
                                 },
-                              },
-                            }))
+                              };
+                            })
                           }
                           className={`w-12 h-6 rounded-full transition-colors duration-200 relative flex items-center px-0.5 cursor-pointer ${
                             profile.theme.extraEffects?.glowIcons !== false ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]' : 'bg-white/15'
