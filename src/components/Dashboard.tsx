@@ -939,13 +939,24 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-white/70 mb-1">Card Banner URL (Optional)</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-semibold text-white/70">Card Banner URL (Optional)</label>
+                    {profile.bannerUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setProfile({ ...profile, bannerUrl: '' })}
+                        className="text-[11px] text-red-400 hover:text-red-300 transition-colors"
+                      >
+                        ลบรูปแบนเนอร์
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={profile.bannerUrl || ''}
                     onChange={(e) => setProfile({ ...profile, bannerUrl: e.target.value })}
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500 font-mono"
-                    placeholder="https://images.unsplash.com/... หรือรูปแบนเนอร์ด้านบน"
+                    placeholder="https://images.unsplash.com/... หรือเว้นว่างหากไม่ต้องการใส่แบนเนอร์"
                   />
                 </div>
 

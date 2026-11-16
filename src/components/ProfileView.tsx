@@ -152,6 +152,8 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
     setBannerFailed(false);
   }, [profile.bannerUrl]);
 
+  const hasBanner = Boolean(profile.bannerUrl && profile.bannerUrl.trim() && !bannerFailed);
+
   // Real-time presence & live views
   const [views, setViews] = useState(profile.views || 0);
   const [liveViewers, setLiveViewers] = useState(1);
@@ -612,23 +614,14 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
           )}
 
           {/* Top Banner with fallback & error handling */}
-          {layout !== 'compact' && (
+          {layout !== 'compact' && hasBanner && (
             <div className={`w-full h-28 relative overflow-hidden ${isTransparent ? 'rounded-2xl mb-2' : ''}`}>
-              {profile.bannerUrl && !bannerFailed ? (
-                <img
-                  src={profile.bannerUrl}
-                  alt=""
-                  onError={() => setBannerFailed(true)}
-                  className="w-full h-full object-cover filter brightness-[0.7]"
-                />
-              ) : (
-                <div
-                  className="w-full h-full"
-                  style={{
-                    background: `linear-gradient(135deg, ${accent}30 0%, ${glow}18 50%, rgba(18,19,26,0.95) 100%)`,
-                  }}
-                />
-              )}
+              <img
+                src={profile.bannerUrl}
+                alt=""
+                onError={() => setBannerFailed(true)}
+                className="w-full h-full object-cover filter brightness-[0.7]"
+              />
               {!isTransparent && (
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#12131a]" />
               )}
@@ -637,7 +630,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
 
           {/* 1. LAYOUT: CENTER (Standard Classic Aesthetic) */}
           {layout === 'center' && (
-            <div className={`p-6 sm:p-7 text-center ${!isTransparent ? '-mt-14' : 'pt-7'}`}>
+            <div className={`p-6 sm:p-7 text-center ${hasBanner && !isTransparent ? '-mt-14' : 'pt-7'}`}>
               {/* Avatar with Discord Decoration Frame */}
               <div className="relative inline-block mx-auto mb-3">
                 <AvatarWithDecoration
@@ -861,7 +854,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
 
           {/* 2. LAYOUT: LEFT (Split / Horizontal 2-Column HUD Layout) */}
           {layout === 'left' && (
-            <div className={`p-6 sm:p-7 ${!isTransparent ? '-mt-10' : 'pt-6'}`}>
+            <div className={`p-6 sm:p-7 ${hasBanner && !isTransparent ? '-mt-10' : 'pt-6'}`}>
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                 {/* Left Side: Avatar, Name, Handle, Badges, Discord */}
                 <div className="sm:w-[240px] flex-shrink-0 flex flex-col items-center sm:items-start text-center sm:text-left">
