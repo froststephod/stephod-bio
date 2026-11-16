@@ -353,6 +353,9 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
   const nameColor = profile.theme.nameColor || '#ffffff';
   const textColor = profile.theme.textColor || '#d1d5db';
   const nameFont = profile.theme.nameFont || 'inherit';
+  const hasGlowingNameEffect = profile.theme.extraEffects?.nameEffects?.some((e) =>
+    ['rgb-glow', 'rgb-wave', 'rainbow', 'glow', 'rgb', 'rainbow-glow'].includes(e)
+  );
   const textFont = profile.theme.textFont || 'inherit';
 
   // Extra Effects state
@@ -647,11 +650,15 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
               {/* Display Name */}
               <div className="flex items-center justify-center gap-1.5 flex-wrap">
                 <h1
-                  className="text-xl sm:text-2xl font-bold tracking-tight drop-shadow-md"
+                  className="text-xl sm:text-2xl font-bold tracking-tight py-1"
                   style={{
-                    color: nameColor,
+                    color: hasGlowingNameEffect ? undefined : nameColor,
                     fontFamily: nameFont !== 'inherit' ? getFontCssFamily(nameFont) : undefined,
-                    textShadow: isTransparent ? '0 2px 14px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.8)' : undefined,
+                    textShadow: hasGlowingNameEffect
+                      ? 'none'
+                      : isTransparent
+                      ? '0 2px 14px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.8)'
+                      : undefined,
                   }}
                 >
                   <AnimatedTextEffect
@@ -881,11 +888,15 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                   </div>
 
                   <h1
-                    className="text-xl font-bold tracking-tight drop-shadow-md"
+                    className="text-xl font-bold tracking-tight py-1"
                     style={{
-                      color: nameColor,
+                      color: hasGlowingNameEffect ? undefined : nameColor,
                       fontFamily: nameFont !== 'inherit' ? getFontCssFamily(nameFont) : undefined,
-                      textShadow: isTransparent ? '0 2px 14px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.8)' : undefined,
+                      textShadow: hasGlowingNameEffect
+                        ? 'none'
+                        : isTransparent
+                        ? '0 2px 14px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.8)'
+                        : undefined,
                     }}
                   >
                     <AnimatedTextEffect
@@ -1114,11 +1125,15 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h1
-                      className="text-base sm:text-lg font-bold tracking-tight truncate"
+                      className="text-base sm:text-lg font-bold tracking-tight py-1"
                       style={{
-                        color: nameColor,
+                        color: hasGlowingNameEffect ? undefined : nameColor,
                         fontFamily: nameFont !== 'inherit' ? getFontCssFamily(nameFont) : undefined,
-                        textShadow: isTransparent ? '0 2px 14px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.8)' : undefined,
+                        textShadow: hasGlowingNameEffect
+                          ? 'none'
+                          : isTransparent
+                          ? '0 2px 14px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.8)'
+                          : undefined,
                       }}
                     >
                       <AnimatedTextEffect

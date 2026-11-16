@@ -26,8 +26,10 @@ interface Props {
   saving?: boolean;
 }
 
-// 34 Name Effects - All 100% unlocked and available
+// 36 Name Effects - All 100% unlocked and available
 const NAME_EFFECTS_LIST = [
+  { id: 'rgb-glow', name: 'RGB Neon Glow', sub: 'แสงนีออนเรืองแสงสว่างจ้า', tag: 'rgb', icon: '🌈' },
+  { id: 'rgb-wave', name: 'RGB Chroma Wave', sub: 'คลื่นสะท้อนแสงหลากสี', tag: 'rgb', icon: '✨' },
   { id: 'typewriter', name: 'Typewriter', sub: 'รองรับหลายคำ', tag: 'typewriter' },
   { id: 'morph', name: 'Morph', sub: 'รองรับหลายคำ', tag: 'morph' },
   { id: 'wave', name: 'Wave', sub: 'คลื่นพริ้วไหว', tag: 'wave', icon: '🌊' },
@@ -64,8 +66,10 @@ const NAME_EFFECTS_LIST = [
   { id: 'yellow-sparkles', name: 'Yellow Sparkles', sub: 'ดาวเหลือง', tag: 'sparkles' },
 ];
 
-// 18 Bio Effects - All 100% unlocked and available
+// 20 Bio Effects - All 100% unlocked and available
 const BIO_EFFECTS_LIST = [
+  { id: 'rgb-glow', name: 'RGB Neon Glow', sub: 'แสงนีออนเรืองแสงสว่างจ้า', tag: 'rgb' },
+  { id: 'rgb-wave', name: 'RGB Chroma Wave', sub: 'คลื่นสะท้อนแสงหลากสี', tag: 'rgb' },
   { id: 'typewriter', name: 'Typewriter', sub: 'รองรับหลายคำ', tag: 'typewriter' },
   { id: 'morph', name: 'Morph', sub: 'รองรับหลายคำ', tag: 'morph' },
   { id: 'wave', name: 'Wave', sub: 'คลื่นพริ้วไหว', tag: 'wave' },
@@ -558,7 +562,9 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
                 {NAME_EFFECTS_LIST.map((eff) => {
                   const isSelected = tempNameEffects.includes(eff.id);
                   let previewClass = '';
-                  if (eff.id === 'rainbow') previewClass = 'effect-rainbow';
+                  if (eff.id === 'rgb-glow') previewClass = 'effect-rgb-glow';
+                  else if (eff.id === 'rgb-wave') previewClass = 'effect-rgb-wave';
+                  else if (eff.id === 'rainbow') previewClass = 'effect-rainbow';
                   else if (eff.id === 'shimmer') previewClass = 'effect-shimmer';
                   else if (eff.id === 'shine') previewClass = 'effect-shine';
                   else if (eff.id === 'glow') previewClass = 'effect-glow';
@@ -676,7 +682,9 @@ export default function ExtraEffectsView({ profile, onUpdateProfile, onSave, sav
                 {BIO_EFFECTS_LIST.map((eff) => {
                   const isSelected = tempBioEffects.includes(eff.id);
                   let previewClass = '';
-                  if (eff.id === 'rainbow') previewClass = 'effect-rainbow';
+                  if (eff.id === 'rgb-glow') previewClass = 'effect-rgb-glow';
+                  else if (eff.id === 'rgb-wave') previewClass = 'effect-rgb-wave';
+                  else if (eff.id === 'rainbow') previewClass = 'effect-rainbow';
                   else if (eff.id === 'shimmer') previewClass = 'effect-shimmer';
                   else if (eff.id === 'shine') previewClass = 'effect-shine';
                   else if (eff.id === 'glow') previewClass = 'effect-glow';

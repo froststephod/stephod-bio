@@ -146,10 +146,30 @@ export default function AnimatedTextEffect({
 
   // Construct CSS class string based on chosen effects
   const effectClasses: string[] = [];
-  if (effects.includes('rainbow')) effectClasses.push('effect-rainbow');
+
+  // RGB Neon Glow (Ultra Bright & Radiant)
+  const hasRgbGlow =
+    effects.includes('rgb-glow') ||
+    effects.includes('rgb') ||
+    effects.includes('rgb-neon') ||
+    effects.includes('rainbow-glow') ||
+    (effects.includes('rainbow') && effects.includes('glow'));
+
+  if (hasRgbGlow) {
+    effectClasses.push('effect-rgb-glow');
+  } else if (effects.includes('rgb-wave') || effects.includes('chroma-wave')) {
+    effectClasses.push('effect-rgb-wave');
+  } else {
+    if (effects.includes('rainbow')) effectClasses.push('effect-rainbow');
+    if (effects.includes('glow')) effectClasses.push('effect-glow');
+  }
+
+  if (effects.includes('rgb-wave') && !effectClasses.includes('effect-rgb-wave')) {
+    effectClasses.push('effect-rgb-wave');
+  }
+
   if (effects.includes('shimmer')) effectClasses.push('effect-shimmer');
   if (effects.includes('shine')) effectClasses.push('effect-shine');
-  if (effects.includes('glow')) effectClasses.push('effect-glow');
   if (effects.includes('shake')) effectClasses.push('effect-shake');
   if (effects.includes('glitch')) effectClasses.push('effect-glitch');
   if (effects.includes('flames')) effectClasses.push('effect-flames');

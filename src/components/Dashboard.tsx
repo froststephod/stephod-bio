@@ -1096,7 +1096,17 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-white/70 mb-1">Display Name (ชื่อที่แสดง)</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-white/70">Display Name (ชื่อที่แสดง)</label>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('effects')}
+                      className="text-[11px] text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>เอฟเฟกต์ชื่อทั้งหมด ({profile.theme.extraEffects?.nameEffects?.length || 0}/3)</span>
+                    </button>
+                  </div>
                   <input
                     type="text"
                     value={profile.displayName}
@@ -1104,6 +1114,46 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500"
                     placeholder="เช่น Pun ✨ หรือ John Doe"
                   />
+                  {/* Quick RGB Neon Glow Button */}
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const current = profile.theme.extraEffects?.nameEffects || [];
+                        const hasRgb = current.includes('rgb-glow');
+                        const updated = hasRgb
+                          ? current.filter((e) => e !== 'rgb-glow')
+                          : [...current.filter((e) => e !== 'rainbow' && e !== 'glow'), 'rgb-glow'].slice(0, 3);
+                        setProfile({
+                          ...profile,
+                          theme: {
+                            ...profile.theme,
+                            extraEffects: {
+                              ...(profile.theme.extraEffects || {}),
+                              nameEffects: updated,
+                            },
+                          },
+                        });
+                      }}
+                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        profile.theme.extraEffects?.nameEffects?.includes('rgb-glow')
+                          ? 'bg-gradient-to-r from-[#ff0055] via-[#00ffff] to-[#00ff66] text-black shadow-[0_0_18px_rgba(0,255,255,0.6)] font-extrabold ring-1 ring-white/50'
+                          : 'bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-white/15'
+                      }`}
+                    >
+                      <span>🌈</span>
+                      <span>เอฟเฟกต์ชื่อ RGB เรืองแสงสว่างจ้า</span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono ${
+                          profile.theme.extraEffects?.nameEffects?.includes('rgb-glow')
+                            ? 'bg-black/70 text-white font-bold'
+                            : 'bg-white/10 text-white/50'
+                        }`}
+                      >
+                        {profile.theme.extraEffects?.nameEffects?.includes('rgb-glow') ? 'เปิดใช้งานอยู่ ✓' : 'คลิกเพื่อเปิด'}
+                      </span>
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -1716,6 +1766,44 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                           className="w-full h-9 rounded-xl bg-transparent cursor-pointer border border-white/20 p-1"
                         />
                       </div>
+                    </div>
+
+                    {/* Quick RGB Glow Preset */}
+                    <div className="p-3 rounded-xl border border-white/10 bg-white/[0.02] flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-lg">🌈</span>
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-white truncate">เอฟเฟกต์ชื่อ RGB เรืองแสงสว่างจ้า</div>
+                          <div className="text-[10px] text-white/50 truncate">สีรุ้งนีออนเคลื่อนไหวพร้อมออร่าสว่างชัดเจน</div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const current = profile.theme.extraEffects?.nameEffects || [];
+                          const hasRgb = current.includes('rgb-glow');
+                          const updated = hasRgb
+                            ? current.filter((e) => e !== 'rgb-glow')
+                            : [...current.filter((e) => e !== 'rainbow' && e !== 'glow'), 'rgb-glow'].slice(0, 3);
+                          setProfile({
+                            ...profile,
+                            theme: {
+                              ...profile.theme,
+                              extraEffects: {
+                                ...(profile.theme.extraEffects || {}),
+                                nameEffects: updated,
+                              },
+                            },
+                          });
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                          profile.theme.extraEffects?.nameEffects?.includes('rgb-glow')
+                            ? 'bg-gradient-to-r from-[#ff0055] via-[#00ffff] to-[#00ff66] text-black shadow-[0_0_14px_rgba(0,255,255,0.6)] font-extrabold'
+                            : 'bg-white/10 hover:bg-white/20 text-white'
+                        }`}
+                      >
+                        {profile.theme.extraEffects?.nameEffects?.includes('rgb-glow') ? 'เปิดอยู่ ✓' : 'เปิดใช้งาน'}
+                      </button>
                     </div>
 
                     {/* Save Button for Colors */}
