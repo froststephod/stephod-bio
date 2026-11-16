@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ThemeConfig } from '@/types/profile';
 
 interface Props {
@@ -31,6 +31,121 @@ interface Sakura {
   angle: number;
   angularSpeed: number;
   opacity: number;
+}
+
+function YouTubeBackground({
+  ytId,
+  brightnessFactor,
+  overlayDarkness,
+  canvasRef,
+}: {
+  ytId: string;
+  brightnessFactor: number;
+  overlayDarkness: number;
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+}) {
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [origin, setOrigin] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setOrigin(window.location.origin);
+    }
+
+    const handleMessage = (e: MessageEvent) => {
+      try {
+        if (!e.data || typeof e.data !== 'string') return;
+        const data = JSON.parse(e.data);
+        if (data.event === 'infoDelivery' && data.info) {
+          if (data.info.playerState === 1) {
+            setIsPlaying(true);
+          } else if (data.info.playerState === 0) {
+            // Video ended - loop seamlessly without playlist controls
+            iframeRef.current?.contentWindow?.postMessage(
+              JSON.stringify({ event: 'command', func: 'seekTo', args: [0, true] }),
+              '*'
+            );
+            iframeRef.current?.contentWindow?.postMessage(
+              JSON.stringify({ event: 'command', func: 'playVideo' }),
+              '*'
+            );
+          }
+        }
+        if (data.event === 'onStateChange') {
+          if (data.data === 1) {
+            setIsPlaying(true);
+          } else if (data.data === 0) {
+            iframeRef.current?.contentWindow?.postMessage(
+              JSON.stringify({ event: 'command', func: 'seekTo', args: [0, true] }),
+              '*'
+            );
+            iframeRef.current?.contentWindow?.postMessage(
+              JSON.stringify({ event: 'command', func: 'playVideo' }),
+              '*'
+            );
+          }
+        }
+      } catch {}
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    // Fallback: fade in after 1.8s in case message event is blocked by browser security
+    const timer = setTimeout(() => {
+      setIsPlaying(true);
+    }, 1800);
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      clearTimeout(timer);
+    };
+  }, []);
+
+  const handleIframeLoad = () => {
+    try {
+      iframeRef.current?.contentWindow?.postMessage(
+        JSON.stringify({ event: 'command', func: 'mute' }),
+        '*'
+      );
+      iframeRef.current?.contentWindow?.postMessage(
+        JSON.stringify({ event: 'command', func: 'playVideo' }),
+        '*'
+      );
+    } catch {}
+  };
+
+  const embedUrl = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&playsinline=1&enablejsapi=1${origin ? `&origin=${encodeURIComponent(origin)}` : ''}`;
+
+  return (
+    <div className="absolute inset-0 -z-0 overflow-hidden pointer-events-none bg-black">
+      {/* Zoom / scale 1.35x to push all YouTube branding, title overlays, and progress controls completely off-screen */}
+      <iframe
+        ref={iframeRef}
+        onLoad={handleIframeLoad}
+        className="w-[120vw] h-[67.5vw] min-h-[120vh] min-w-[213.33vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none scale-[1.35] transform-gpu"
+        style={{ filter: `brightness(${brightnessFactor})` }}
+        src={embedUrl}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        title="Background Video"
+      />
+
+      {/* Loading Cover Veil: hides YouTube thumbnail and initial play button until video is actively playing */}
+      <div
+        className={`absolute inset-0 bg-black pointer-events-none transition-opacity duration-700 ${
+          isPlaying ? 'opacity-0' : 'opacity-100'
+        }`}
+      />
+
+      {overlayDarkness > 0 && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ backgroundColor: `rgba(0, 0, 0, ${overlayDarkness})` }}
+        />
+      )}
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-10" />
+    </div>
+  );
 }
 
 export default function BackgroundCanvas({ theme }: Props) {
@@ -249,22 +364,12 @@ export default function BackgroundCanvas({ theme }: Props) {
 
     if (ytId) {
       return (
-        <div className="absolute inset-0 -z-0 overflow-hidden pointer-events-none bg-black">
-          <iframe
-            className="w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-            style={{ filter: `brightness(${brightnessFactor})` }}
-            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&playsinline=1&enablejsapi=1`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            title="Background Video"
-          />
-          {overlayDarkness > 0 && (
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{ backgroundColor: `rgba(0, 0, 0, ${overlayDarkness})` }}
-            />
-          )}
-          <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-10" />
-        </div>
+        <YouTubeBackground
+          ytId={ytId}
+          brightnessFactor={brightnessFactor}
+          overlayDarkness={overlayDarkness}
+          canvasRef={canvasRef}
+        />
       );
     }
 
