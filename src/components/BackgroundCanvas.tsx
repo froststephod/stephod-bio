@@ -45,22 +45,24 @@ function NativeVideoBackground({
   canvasRef: React.RefObject<HTMLCanvasElement>;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    setIsLoaded(false);
     setHasError(false);
     const video = videoRef.current;
     if (!video) return;
 
     video.muted = true;
     video.defaultMuted = true;
+    video.playsInline = true;
     const playPromise = video.play();
     if (playPromise !== undefined) {
       playPromise.catch(() => {
         const handleUserTouch = () => {
-          video.play().catch(() => {});
+          if (videoRef.current) {
+            videoRef.current.muted = true;
+            videoRef.current.play().catch(() => {});
+          }
           window.removeEventListener('click', handleUserTouch);
           window.removeEventListener('touchstart', handleUserTouch);
         };
@@ -76,22 +78,41 @@ function NativeVideoBackground({
 
   return (
     <div className="absolute inset-0 -z-0 overflow-hidden pointer-events-none bg-[#0a0b12]">
+      {/* 
+        Instant Ambient Backdrop (0ms):
+        Sleek dark midnight gradient so screen is NEVER a cold empty pitch-black void while video frames decode!
+      */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle at 50% 35%, #181c30 0%, #0d0f1c 55%, #05060c 100%)',
+        }}
+      />
+
       <video
-        ref={videoRef}
+        ref={(el) => {
+          if (el) {
+            el.muted = true;
+            el.defaultMuted = true;
+            if (el.paused) {
+              el.play().catch(() => {});
+            }
+          }
+          videoRef.current = el;
+        }}
         autoPlay
         loop
         muted
         playsInline
         preload="auto"
-        onPlaying={() => setIsLoaded(true)}
-        onLoadedData={() => setIsLoaded(true)}
         onError={() => setHasError(true)}
-        className={`w-full h-full object-cover transition-opacity duration-500 ${
-          isLoaded ? 'opacity-100' : 'opacity-0'
-        }`}
+        className="w-full h-full object-cover transition-opacity duration-300 opacity-100"
         style={{ filter: `brightness(${brightnessFactor})` }}
-        src={videoUrl}
-      />
+      >
+        <source src={videoUrl} type="video/mp4" />
+        <source src={videoUrl} />
+      </video>
+
       {overlayDarkness > 0 && (
         <div
           className="absolute inset-0 pointer-events-none"
@@ -328,13 +349,16 @@ function YouTubeBackground({
       </div>
 
       {/* 
-        Loading Veil: Remains 100% opaque until the video is actively in PLAYING state (data === 1).
-        This guarantees the user NEVER sees the YouTube pause symbol (❚❚), initial play button, or low-res buffering frame.
+        Loading Veil: Fades out quickly once playing or after 1.5s timeout.
+        Uses an ambient dark radial gradient instead of solid black.
       */}
       <div
-        className={`absolute inset-0 bg-[#0a0b12] pointer-events-none transition-opacity duration-700 ${
-          isPlaying ? 'opacity-0' : 'opacity-100'
+        className={`absolute inset-0 pointer-events-none transition-opacity duration-300 ${
+          isPlaying ? 'opacity-0' : 'opacity-85'
         }`}
+        style={{
+          background: 'radial-gradient(circle at 50% 35%, #181c30 0%, #0d0f1c 55%, #05060c 100%)',
+        }}
       />
 
       {overlayDarkness > 0 && (

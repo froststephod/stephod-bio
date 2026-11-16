@@ -106,6 +106,13 @@ export default async function UserProfilePage({ params }: Props) {
 
   return (
     <>
+      {/* High-speed Preload tags for instantaneous background asset streaming */}
+      {profile.theme.backgroundType === 'custom-video' && profile.theme.backgroundVideoUrl && !profile.theme.backgroundVideoUrl.includes('youtube.com') && !profile.theme.backgroundVideoUrl.includes('youtu.be') && (
+        <link rel="preload" href={profile.theme.backgroundVideoUrl} as="video" type="video/mp4" />
+      )}
+      {profile.theme.backgroundType === 'custom-image' && profile.theme.backgroundImageUrl && (
+        <link rel="preload" href={profile.theme.backgroundImageUrl} as="image" />
+      )}
       <AnnouncementBanner announcement={announcement} />
       <ProfileView profile={profile} />
     </>
