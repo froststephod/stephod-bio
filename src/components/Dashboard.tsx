@@ -1556,6 +1556,35 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                     </div>
                   )}
 
+                  {/* Background Brightness Slider */}
+                  <div className="pt-2 border-t border-white/10">
+                    <div className="flex justify-between items-center text-xs text-white/80 mb-1.5 font-medium">
+                      <span>ความสว่างของพื้นหลัง (Background Brightness)</span>
+                      <span className="px-2 py-0.5 rounded-md bg-white/10 text-emerald-400 font-mono text-xs font-semibold">
+                        {profile.theme.backgroundBrightness ?? 100}%
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="30"
+                      max="140"
+                      step="5"
+                      value={profile.theme.backgroundBrightness ?? 100}
+                      onChange={(e) =>
+                        setProfile({
+                          ...profile,
+                          theme: { ...profile.theme, backgroundBrightness: Number(e.target.value) },
+                        })
+                      }
+                      className="w-full accent-emerald-500 cursor-pointer h-2 bg-white/10 rounded-lg appearance-none"
+                    />
+                    <div className="flex justify-between text-[10px] text-white/40 mt-1">
+                      <span>โทนดาร์ก (30%)</span>
+                      <span>สว่างธรรมชาติ (100%)</span>
+                      <span>สว่างพิเศษ (140%)</span>
+                    </div>
+                  </div>
+
                   {/* Click to Enter Toggle */}
                   <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 space-y-2">
                     <label className="flex items-center gap-2.5 text-xs cursor-pointer select-none">

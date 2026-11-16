@@ -38,6 +38,7 @@ export interface ThemeConfig {
   backgroundType: 'stars' | 'particles' | 'cyber-rain' | 'custom-image' | 'custom-video' | 'gradient';
   backgroundImageUrl?: string;
   backgroundVideoUrl?: string;
+  backgroundBrightness?: number; // 0 to 150 (percentage, 100 = full bright default)
   customCursor: boolean;
   glowEffect: boolean;
   typewriterSpeed: number; // ms

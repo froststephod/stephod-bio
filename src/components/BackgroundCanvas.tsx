@@ -238,6 +238,11 @@ export default function BackgroundCanvas({ theme }: Props) {
     };
   }, [theme.backgroundType, theme.accentColor, bgEffect]);
 
+  const rawBrightness = theme.backgroundBrightness ?? 100;
+  const brightnessFactor = Math.max(0.2, Math.min(2.0, rawBrightness / 100));
+  // Dim overlay: 0 at 100% brightness; if brightness < 100%, add slight dimming
+  const overlayDarkness = rawBrightness < 100 ? ((100 - rawBrightness) / 100) * 0.7 : 0;
+
   // Handle Custom Video (YouTube or direct MP4)
   if (theme.backgroundType === 'custom-video' && theme.backgroundVideoUrl) {
     const ytId = getYouTubeVideoId(theme.backgroundVideoUrl);
@@ -246,12 +251,18 @@ export default function BackgroundCanvas({ theme }: Props) {
       return (
         <div className="absolute inset-0 -z-0 overflow-hidden pointer-events-none bg-black">
           <iframe
-            className="w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none filter brightness-[0.55]"
-            src={`https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&playsinline=1&enablejsapi=1`}
+            className="w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ filter: `brightness(${brightnessFactor})` }}
+            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&playsinline=1&enablejsapi=1`}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             title="Background Video"
           />
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
+          {overlayDarkness > 0 && (
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{ backgroundColor: `rgba(0, 0, 0, ${overlayDarkness})` }}
+            />
+          )}
           <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-10" />
         </div>
       );
@@ -264,10 +275,16 @@ export default function BackgroundCanvas({ theme }: Props) {
           loop
           muted
           playsInline
-          className="w-full h-full object-cover filter brightness-[0.5]"
+          className="w-full h-full object-cover"
+          style={{ filter: `brightness(${brightnessFactor})` }}
           src={theme.backgroundVideoUrl}
         />
-        <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" />
+        {overlayDarkness > 0 && (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ backgroundColor: `rgba(0, 0, 0, ${overlayDarkness})` }}
+          />
+        )}
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-10" />
       </div>
     );
@@ -278,18 +295,34 @@ export default function BackgroundCanvas({ theme }: Props) {
     return (
       <div
         className="absolute inset-0 -z-0 bg-cover bg-center bg-no-repeat pointer-events-none"
-        style={{ backgroundImage: `url(${theme.backgroundImageUrl})` }}
+        style={{
+          backgroundImage: `url(${theme.backgroundImageUrl})`,
+          filter: `brightness(${brightnessFactor})`,
+        }}
       >
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
+        {overlayDarkness > 0 && (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ backgroundColor: `rgba(0, 0, 0, ${overlayDarkness})` }}
+          />
+        )}
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-10" />
       </div>
     );
   }
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 -z-0 w-full h-full pointer-events-none"
-    />
+    <div
+      className="absolute inset-0 -z-0 pointer-events-none overflow-hidden"
+      style={{
+        background: `radial-gradient(circle at 50% 25%, ${theme.accentColor || '#10b981'}15 0%, rgba(18, 22, 34, 0.75) 45%, #0a0b12 100%)`,
+        filter: `brightness(${brightnessFactor})`,
+      }}
+    >
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full pointer-events-none"
+      />
+    </div>
   );
 }
