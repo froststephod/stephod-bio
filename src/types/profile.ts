@@ -3,6 +3,7 @@ export interface SocialLink {
   platform: 'discord' | 'steam' | 'github' | 'instagram' | 'youtube' | 'twitch' | 'tiktok' | 'twitter' | 'spotify' | 'telegram' | 'custom';
   label: string;
   url: string;
+  color?: string; // Custom glow/accent color for this specific button
 }
 
 export interface Badge {

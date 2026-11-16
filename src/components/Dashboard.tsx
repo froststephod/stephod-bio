@@ -95,6 +95,21 @@ const COLOR_PRESETS = [
   { name: 'Pure White', color: '#f8fafc' },
 ];
 
+const getPlatformDefaultColor = (platform: string, label?: string): string => {
+  const raw = `${platform || ''} ${label || ''}`.toLowerCase().trim();
+  if (raw.includes('discord')) return '#5865F2';
+  if (raw.includes('tiktok') || raw.includes('tik')) return '#25F4EE';
+  if (raw.includes('instagram') || raw.includes('insta') || raw.includes('ig')) return '#E1306C';
+  if (raw.includes('spotify')) return '#1DB954';
+  if (raw.includes('youtube') || raw.includes('yt')) return '#FF0000';
+  if (raw.includes('twitch')) return '#A970FF';
+  if (raw.includes('steam')) return '#66C0F4';
+  if (raw.includes('twitter') || raw === 'x' || raw.includes(' x ')) return '#1DA1F2';
+  if (raw.includes('telegram') || raw.includes('tg')) return '#24A1DE';
+  if (raw.includes('github') || raw.includes('git')) return '#ffffff';
+  return '#6366f1';
+};
+
 const AUDIO_PRESETS = [
   {
     title: 'Blinding Lights',
@@ -2027,8 +2042,67 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
             {/* 4. Social Links Tab */}
             {activeTab === 'links' && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-white/70">โซเชียลมีเดีย & ลิงก์</span>
+                {/* Glow Buttons Toggle Switch */}
+                <div className="p-3.5 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-between shadow-lg">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`p-2 rounded-xl border transition-all ${
+                        profile.theme.extraEffects?.glowIcons !== false
+                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
+                          : 'bg-white/5 border-white/10 text-white/40'
+                      }`}
+                    >
+                      <Lightbulb className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                        <span>แสงนีออนเรืองแสง (Glow Buttons)</span>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                            profile.theme.extraEffects?.glowIcons !== false
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                              : 'bg-white/10 text-white/50'
+                          }`}
+                        >
+                          {profile.theme.extraEffects?.glowIcons !== false ? 'เปิด (ON)' : 'ปิด (OFF)'}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-white/50">เปิด/ปิดแสงเรืองแสงของปุ่มโซเชียลทั้งหมด</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setProfile((prev) => {
+                        const currentGlow = prev.theme.extraEffects?.glowIcons !== false;
+                        return {
+                          ...prev,
+                          theme: {
+                            ...prev.theme,
+                            extraEffects: {
+                              ...(prev.theme.extraEffects || {}),
+                              glowIcons: !currentGlow,
+                            },
+                          },
+                        };
+                      })
+                    }
+                    className={`w-12 h-6 rounded-full transition-colors duration-200 relative flex items-center px-0.5 cursor-pointer ${
+                      profile.theme.extraEffects?.glowIcons !== false ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]' : 'bg-white/15'
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
+                        profile.theme.extraEffects?.glowIcons !== false ? 'translate-x-6' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-xs font-semibold text-white/70">
+                    รายการปุ่มโซเชียลมีเดีย ({profile.socialLinks.length})
+                  </span>
                   <button
                     onClick={addSocialLink}
                     className="px-2.5 py-1 bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 rounded-lg text-xs flex items-center gap-1 text-purple-300 transition-colors"
@@ -2039,56 +2113,125 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                 </div>
 
                 <div className="space-y-3">
-                  {profile.socialLinks.map((link, idx) => (
-                    <div
-                      key={link.id}
-                      className="p-3 rounded-xl border border-white/10 bg-white/5 space-y-2 relative group"
-                    >
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={link.platform}
-                          onChange={(e) => updateSocialLink(idx, { platform: e.target.value as SocialLink['platform'] })}
-                          className="bg-neutral-900 border border-white/10 rounded-lg px-2 py-1 text-xs text-white"
-                        >
-                          <option value="discord">Discord</option>
-                          <option value="steam">Steam</option>
-                          <option value="spotify">Spotify</option>
-                          <option value="instagram">Instagram</option>
-                          <option value="tiktok">TikTok</option>
-                          <option value="github">GitHub</option>
-                          <option value="youtube">YouTube</option>
-                          <option value="twitch">Twitch</option>
-                          <option value="twitter">X / Twitter</option>
-                          <option value="telegram">Telegram</option>
-                          <option value="custom">Custom Web</option>
-                        </select>
+                  {profile.socialLinks.map((link, idx) => {
+                    const defaultColor = getPlatformDefaultColor(link.platform, link.label);
+                    const currentColor = link.color || defaultColor;
+                    const isCustomColor = Boolean(link.color && link.color.trim());
+
+                    return (
+                      <div
+                        key={link.id}
+                        className="p-3.5 rounded-2xl border border-white/10 bg-white/5 space-y-2.5 relative group hover:border-white/20 transition-all"
+                      >
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={link.platform}
+                            onChange={(e) => updateSocialLink(idx, { platform: e.target.value as SocialLink['platform'] })}
+                            className="bg-neutral-900 border border-white/10 rounded-lg px-2 py-1 text-xs text-white"
+                          >
+                            <option value="discord">Discord</option>
+                            <option value="steam">Steam</option>
+                            <option value="spotify">Spotify</option>
+                            <option value="instagram">Instagram</option>
+                            <option value="tiktok">TikTok</option>
+                            <option value="github">GitHub</option>
+                            <option value="youtube">YouTube</option>
+                            <option value="twitch">Twitch</option>
+                            <option value="twitter">X / Twitter</option>
+                            <option value="telegram">Telegram</option>
+                            <option value="custom">Custom Web</option>
+                          </select>
+
+                          <input
+                            type="text"
+                            value={link.label}
+                            onChange={(e) => updateSocialLink(idx, { label: e.target.value })}
+                            placeholder="ชื่อปุ่ม เช่น Discord"
+                            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white"
+                          />
+
+                          <button
+                            onClick={() => removeSocialLink(idx)}
+                            className="text-white/40 hover:text-red-400 p-1 transition-colors"
+                            title="ลบลิงก์"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
 
                         <input
                           type="text"
-                          value={link.label}
-                          onChange={(e) => updateSocialLink(idx, { label: e.target.value })}
-                          placeholder="ชื่อปุ่ม เช่น Discord"
-                          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white"
+                          value={link.url}
+                          onChange={(e) => updateSocialLink(idx, { url: e.target.value })}
+                          placeholder="URL เช่น https://discord.gg/..."
+                          className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white font-mono"
                         />
 
-                        <button
-                          onClick={() => removeSocialLink(idx)}
-                          className="text-white/40 hover:text-red-400 p-1"
-                          title="ลบลิงก์"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                        {/* Per-button Color Picker & Preset Row */}
+                        <div className="pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] text-white/60">สีปุ่ม:</span>
+                            <div className="flex items-center gap-1.5 bg-black/40 border border-white/10 rounded-lg px-2 py-1">
+                              <input
+                                type="color"
+                                value={currentColor}
+                                onChange={(e) => updateSocialLink(idx, { color: e.target.value })}
+                                className="w-5 h-5 rounded cursor-pointer border-0 p-0 bg-transparent"
+                                title="คลิกเพื่อเลือกสีอิสระ"
+                              />
+                              <input
+                                type="text"
+                                value={link.color || ''}
+                                placeholder={defaultColor}
+                                onChange={(e) => updateSocialLink(idx, { color: e.target.value })}
+                                className="w-16 bg-transparent text-[11px] font-mono text-white focus:outline-none uppercase"
+                              />
+                            </div>
+                            {isCustomColor && (
+                              <button
+                                type="button"
+                                onClick={() => updateSocialLink(idx, { color: undefined })}
+                                className="text-[10px] text-purple-300 hover:text-purple-200 underline transition-colors"
+                              >
+                                คืนค่าสีแพลตฟอร์ม
+                              </button>
+                            )}
+                          </div>
 
-                      <input
-                        type="text"
-                        value={link.url}
-                        onChange={(e) => updateSocialLink(idx, { url: e.target.value })}
-                        placeholder="URL เช่น https://discord.gg/..."
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white font-mono"
-                      />
-                    </div>
-                  ))}
+                          {/* Quick Color Presets */}
+                          <div className="flex items-center gap-1.5">
+                            {[
+                              { label: 'สีแพลตฟอร์ม', hex: defaultColor },
+                              { label: 'ฟ้าบลู', hex: '#3b82f6' },
+                              { label: 'ไซอัน', hex: '#25F4EE' },
+                              { label: 'ชมพูนีออน', hex: '#E1306C' },
+                              { label: 'เขียวนีออน', hex: '#10b981' },
+                              { label: 'ม่วง', hex: '#a855f7' },
+                              { label: 'แดง', hex: '#ef4444' },
+                              { label: 'ทองส้ม', hex: '#f59e0b' },
+                              { label: 'ขาว', hex: '#ffffff' },
+                            ].map((preset, pIdx) => {
+                              const isSelected = currentColor.toLowerCase() === preset.hex.toLowerCase();
+                              return (
+                                <button
+                                  key={pIdx}
+                                  type="button"
+                                  onClick={() => updateSocialLink(idx, { color: pIdx === 0 ? undefined : preset.hex })}
+                                  style={{ backgroundColor: preset.hex }}
+                                  className={`w-4 h-4 rounded-full border transition-all hover:scale-125 ${
+                                    isSelected
+                                      ? 'border-white scale-125 shadow-[0_0_8px_currentColor]'
+                                      : 'border-white/30 opacity-70 hover:opacity-100'
+                                  }`}
+                                  title={preset.label}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

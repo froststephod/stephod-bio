@@ -360,7 +360,10 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
   const isViewsAnimation = !!profile.theme.extraEffects?.viewsAnimation;
   const isAudioVisualizer = !!profile.theme.extraEffects?.audioVisualizer;
 
-  const getSocialPlatformColor = (platform: string, label?: string): string => {
+  const getSocialPlatformColor = (platform: string, label?: string, customColor?: string): string => {
+    if (customColor && customColor.trim()) {
+      return customColor.trim();
+    }
     const raw = `${platform || ''} ${label || ''}`.toLowerCase().trim();
     if (raw.includes('discord')) return '#5865F2';
     if (raw.includes('tiktok') || raw.includes('tik')) return '#25F4EE';
@@ -777,7 +780,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
               {profile.socialLinks && profile.socialLinks.length > 0 && (
                 <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                   {profile.socialLinks.map((link) => {
-                    const color = getSocialPlatformColor(link.platform, link.label);
+                    const color = getSocialPlatformColor(link.platform, link.label, link.color);
                     return (
                       <a
                         key={link.id}
@@ -785,20 +788,30 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
-                          borderColor: `${color}80`,
-                          boxShadow: `0 0 16px ${color}45, 0 0 32px ${color}20, inset 0 0 10px ${color}20`,
+                          borderColor: isGlowIcons ? `${color}80` : 'rgba(255, 255, 255, 0.1)',
+                          boxShadow: isGlowIcons
+                            ? `0 0 16px ${color}45, 0 0 32px ${color}20, inset 0 0 10px ${color}20`
+                            : undefined,
                         }}
-                        className="group relative flex items-center gap-2.5 p-2.5 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.03] bg-black/60 backdrop-blur-md hover:bg-black/80 hover:shadow-[0_0_26px_rgba(255,255,255,0.4),0_0_40px_currentColor]"
+                        className={`group relative flex items-center gap-2.5 p-2.5 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 ${
+                          isGlowIcons
+                            ? 'hover:scale-[1.03] bg-black/60 backdrop-blur-md hover:bg-black/80 hover:shadow-[0_0_26px_rgba(255,255,255,0.4),0_0_40px_currentColor]'
+                            : 'bg-black/50 backdrop-blur-md hover:bg-black/70 hover:border-white/20'
+                        }`}
                       >
-                        <div
-                          className="absolute inset-0 rounded-xl opacity-15 group-hover:opacity-30 transition-opacity duration-300 pointer-events-none"
-                          style={{ backgroundColor: color }}
-                        />
+                        {isGlowIcons && (
+                          <div
+                            className="absolute inset-0 rounded-xl opacity-15 group-hover:opacity-30 transition-opacity duration-300 pointer-events-none"
+                            style={{ backgroundColor: color }}
+                          />
+                        )}
                         <div
                           className="relative flex items-center justify-center transition-transform duration-200 group-hover:scale-125 flex-shrink-0"
                           style={{
                             color: color,
-                            filter: `drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 6px ${color}) drop-shadow(0 0 14px ${color}) drop-shadow(0 0 22px ${color})`,
+                            filter: isGlowIcons
+                              ? `drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 6px ${color}) drop-shadow(0 0 14px ${color}) drop-shadow(0 0 22px ${color})`
+                              : undefined,
                           }}
                         >
                           <SocialIcon platform={link.platform} color={color} className="w-4 h-4" />
@@ -806,7 +819,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                         <span
                           className="text-xs font-semibold text-white group-hover:text-white truncate transition-all"
                           style={{
-                            textShadow: `0 0 8px ${color}90, 0 0 16px ${color}50`,
+                            textShadow: isGlowIcons ? `0 0 8px ${color}90, 0 0 16px ${color}50` : undefined,
                           }}
                         >
                           {link.label}
@@ -1029,7 +1042,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                   {profile.socialLinks && profile.socialLinks.length > 0 && (
                     <div className="mt-4 grid grid-cols-2 gap-2">
                       {profile.socialLinks.map((link) => {
-                        const color = getSocialPlatformColor(link.platform, link.label);
+                        const color = getSocialPlatformColor(link.platform, link.label, link.color);
                         return (
                           <a
                             key={link.id}
@@ -1037,20 +1050,30 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
-                              borderColor: `${color}80`,
-                              boxShadow: `0 0 16px ${color}45, 0 0 32px ${color}20, inset 0 0 10px ${color}20`,
+                              borderColor: isGlowIcons ? `${color}80` : 'rgba(255, 255, 255, 0.1)',
+                              boxShadow: isGlowIcons
+                                ? `0 0 16px ${color}45, 0 0 32px ${color}20, inset 0 0 10px ${color}20`
+                                : undefined,
                             }}
-                            className="group relative flex items-center gap-2 p-2 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.03] bg-black/60 backdrop-blur-md hover:bg-black/80 hover:shadow-[0_0_26px_rgba(255,255,255,0.4),0_0_40px_currentColor]"
+                            className={`group relative flex items-center gap-2 p-2 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 ${
+                              isGlowIcons
+                                ? 'hover:scale-[1.03] bg-black/60 backdrop-blur-md hover:bg-black/80 hover:shadow-[0_0_26px_rgba(255,255,255,0.4),0_0_40px_currentColor]'
+                                : 'bg-black/50 backdrop-blur-md hover:bg-black/70 hover:border-white/20'
+                            }`}
                           >
-                            <div
-                              className="absolute inset-0 rounded-xl opacity-15 group-hover:opacity-30 transition-opacity duration-300 pointer-events-none"
-                              style={{ backgroundColor: color }}
-                            />
+                            {isGlowIcons && (
+                              <div
+                                className="absolute inset-0 rounded-xl opacity-15 group-hover:opacity-30 transition-opacity duration-300 pointer-events-none"
+                                style={{ backgroundColor: color }}
+                              />
+                            )}
                             <div
                               className="relative flex items-center justify-center transition-transform duration-200 group-hover:scale-125 flex-shrink-0"
                               style={{
                                 color: color,
-                                filter: `drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 6px ${color}) drop-shadow(0 0 14px ${color}) drop-shadow(0 0 22px ${color})`,
+                                filter: isGlowIcons
+                                  ? `drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 6px ${color}) drop-shadow(0 0 14px ${color}) drop-shadow(0 0 22px ${color})`
+                                  : undefined,
                               }}
                             >
                               <SocialIcon platform={link.platform} color={color} className="w-3.5 h-3.5" />
@@ -1058,7 +1081,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                             <span
                               className="text-xs font-semibold text-white group-hover:text-white truncate transition-all"
                               style={{
-                                textShadow: `0 0 8px ${color}90, 0 0 16px ${color}50`,
+                                textShadow: isGlowIcons ? `0 0 8px ${color}90, 0 0 16px ${color}50` : undefined,
                               }}
                             >
                               {link.label}
@@ -1211,7 +1234,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                 <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2 overflow-x-auto py-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {profile.socialLinks.map((link) => {
-                      const color = getSocialPlatformColor(link.platform, link.label);
+                      const color = getSocialPlatformColor(link.platform, link.label, link.color);
                       return (
                         <a
                           key={link.id}
@@ -1219,17 +1242,23 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{
-                            borderColor: `${color}80`,
-                            boxShadow: `0 0 14px ${color}45, inset 0 0 8px ${color}20`,
+                            borderColor: isGlowIcons ? `${color}80` : 'rgba(255, 255, 255, 0.1)',
+                            boxShadow: isGlowIcons ? `0 0 14px ${color}45, inset 0 0 8px ${color}20` : undefined,
                           }}
-                          className="p-1.5 rounded-lg border bg-black/60 backdrop-blur-md hover:bg-black/80 transition-all duration-300 hover:scale-110"
+                          className={`p-1.5 rounded-lg border transition-all duration-300 hover:scale-110 ${
+                            isGlowIcons
+                              ? 'bg-black/60 backdrop-blur-md hover:bg-black/80'
+                              : 'bg-black/40 backdrop-blur-md hover:bg-black/60 hover:border-white/20'
+                          }`}
                           title={link.label}
                         >
                           <div
                             className="relative flex items-center justify-center transition-transform duration-200 hover:scale-125"
                             style={{
                               color: color,
-                              filter: `drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 6px ${color}) drop-shadow(0 0 14px ${color})`,
+                              filter: isGlowIcons
+                                ? `drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 6px ${color}) drop-shadow(0 0 14px ${color})`
+                                : undefined,
                             }}
                           >
                             <SocialIcon platform={link.platform} color={color} className="w-3.5 h-3.5" />
