@@ -43,6 +43,8 @@ import ProfileView from './ProfileView';
 import OverviewView from './OverviewView';
 import BadgeIcon from './BadgeIcon';
 import BadgeBar from './BadgeBar';
+import { uploadMediaFile } from '@/lib/upload';
+import { getYouTubeVideoId } from '@/lib/music';
 import AvatarWithDecoration from './AvatarWithDecoration';
 import AvatarDecorationModal from './AvatarDecorationModal';
 import FontPickerDropdown from './FontPickerDropdown';
@@ -163,6 +165,75 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const bcRef = useRef<BroadcastChannel | null>(null);
   const isFirstMountRef = useRef(true);
+
+  // File upload state & input refs
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const bgVideoInputRef = useRef<HTMLInputElement | null>(null);
+  const bgImageInputRef = useRef<HTMLInputElement | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
+  const bannerInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: 'bgVideo' | 'bgImage' | 'avatar' | 'banner'
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingField(field);
+    setUploadProgress(0);
+    setUploadError(null);
+
+    try {
+      const res = await uploadMediaFile(file, (percent) => {
+        setUploadProgress(percent);
+      });
+
+      if (res.ok && res.url) {
+        const uploadedUrl = res.url;
+        if (field === 'bgVideo') {
+          setProfile((prev) => ({
+            ...prev,
+            theme: {
+              ...prev.theme,
+              backgroundType: 'custom-video',
+              backgroundVideoUrl: uploadedUrl,
+            },
+          }));
+        } else if (field === 'bgImage') {
+          setProfile((prev) => ({
+            ...prev,
+            theme: {
+              ...prev.theme,
+              backgroundType: 'custom-image',
+              backgroundImageUrl: uploadedUrl,
+            },
+          }));
+        } else if (field === 'avatar') {
+          setProfile((prev) => ({
+            ...prev,
+            avatarUrl: uploadedUrl,
+          }));
+        } else if (field === 'banner') {
+          setProfile((prev) => ({
+            ...prev,
+            bannerUrl: uploadedUrl,
+          }));
+        }
+      } else {
+        setUploadError(res.error || 'การอัปโหลดไฟล์ล้มเหลว กรุณาลองใหม่อีกครั้ง');
+      }
+    } catch (err: any) {
+      setUploadError(err.message || 'เกิดข้อผิดพลาดในการอัปโหลด');
+    } finally {
+      setUploadingField(null);
+      setUploadProgress(0);
+      e.target.value = '';
+    }
+  };
 
   // Maintain long-lived BroadcastChannel for 0ms cross-tab real-time sync
   useEffect(() => {
@@ -915,13 +986,40 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-white/70 mb-1">Avatar Image URL</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold text-white/70">Avatar Image URL</label>
+                      <button
+                        type="button"
+                        onClick={() => !uploadingField && avatarInputRef.current?.click()}
+                        disabled={uploadingField === 'avatar'}
+                        className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20"
+                      >
+                        {uploadingField === 'avatar' ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <span>กำลังอัปโหลด {uploadProgress}%</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-3 h-3" />
+                            <span>อัปโหลดรูป</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <input
+                      type="file"
+                      ref={avatarInputRef}
+                      onChange={(e) => handleFileUpload(e, 'avatar')}
+                      accept="image/*"
+                      className="hidden"
+                    />
                     <input
                       type="text"
                       value={profile.avatarUrl}
                       onChange={(e) => setProfile({ ...profile, avatarUrl: e.target.value })}
                       className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500 font-mono"
-                      placeholder="https://images.unsplash.com/... หรือ ลิงก์รูปภาพ Discord"
+                      placeholder="https://images.unsplash.com/... หรือ กดปุ่มอัปโหลดรูป"
                     />
                   </div>
                 </div>
@@ -955,23 +1053,50 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-semibold text-white/70">Card Banner URL (Optional)</label>
-                    {profile.bannerUrl && (
+                    <label className="text-xs font-semibold text-white/70">Card Banner (แบนเนอร์การ์ด)</label>
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => setProfile({ ...profile, bannerUrl: '' })}
-                        className="text-[11px] text-red-400 hover:text-red-300 transition-colors"
+                        onClick={() => !uploadingField && bannerInputRef.current?.click()}
+                        disabled={uploadingField === 'banner'}
+                        className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20"
                       >
-                        ลบรูปแบนเนอร์
+                        {uploadingField === 'banner' ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <span>กำลังอัปโหลด {uploadProgress}%</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-3 h-3" />
+                            <span>อัปโหลดแบนเนอร์</span>
+                          </>
+                        )}
                       </button>
-                    )}
+                      {profile.bannerUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setProfile({ ...profile, bannerUrl: '' })}
+                          className="text-[11px] text-red-400 hover:text-red-300 transition-colors"
+                        >
+                          ลบรูปแบนเนอร์
+                        </button>
+                      )}
+                    </div>
                   </div>
+                  <input
+                    type="file"
+                    ref={bannerInputRef}
+                    onChange={(e) => handleFileUpload(e, 'banner')}
+                    accept="image/*"
+                    className="hidden"
+                  />
                   <input
                     type="text"
                     value={profile.bannerUrl || ''}
                     onChange={(e) => setProfile({ ...profile, bannerUrl: e.target.value })}
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500 font-mono"
-                    placeholder="https://images.unsplash.com/... หรือเว้นว่างหากไม่ต้องการใส่แบนเนอร์"
+                    placeholder="https://images.unsplash.com/... หรือ กดปุ่มอัปโหลดแบนเนอร์"
                   />
                 </div>
 
@@ -1542,51 +1667,214 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                   </div>
 
                   {profile.theme.backgroundType === 'custom-image' && (
-                    <div>
-                      <label className="block text-xs font-semibold text-white/70 mb-1">Image / GIF URL</label>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-semibold text-white/90">
+                          รูปภาพ / GIF พื้นหลัง (Background Image)
+                        </label>
+                        {profile.theme.backgroundImageUrl && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setProfile({
+                                ...profile,
+                                theme: { ...profile.theme, backgroundImageUrl: '' },
+                              })
+                            }
+                            className="text-[11px] text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
+                          >
+                            <Trash2 className="w-3 h-3" /> ลบรูป
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Hidden File Input */}
                       <input
-                        type="text"
-                        value={profile.theme.backgroundImageUrl || ''}
-                        onChange={(e) =>
-                          setProfile({
-                            ...profile,
-                            theme: { ...profile.theme, backgroundImageUrl: e.target.value },
-                          })
-                        }
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white font-mono"
-                        placeholder="https://... (URL ของรูปภาพหรือ GIF)"
+                        type="file"
+                        ref={bgImageInputRef}
+                        onChange={(e) => handleFileUpload(e, 'bgImage')}
+                        accept="image/*"
+                        className="hidden"
                       />
+
+                      {/* Upload Box */}
+                      <div
+                        onClick={() => !uploadingField && bgImageInputRef.current?.click()}
+                        className={`relative group border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all ${
+                          uploadingField === 'bgImage'
+                            ? 'border-emerald-500/50 bg-emerald-500/10'
+                            : 'border-white/15 hover:border-emerald-500/50 hover:bg-white/5'
+                        }`}
+                      >
+                        {uploadingField === 'bgImage' ? (
+                          <div className="space-y-2 py-2">
+                            <div className="flex items-center justify-center gap-2 text-emerald-400 text-xs font-semibold">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span>กำลังอัปโหลดรูปภาพ... {uploadProgress}%</span>
+                            </div>
+                            <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+                              <div
+                                className="bg-emerald-500 h-full transition-all duration-300"
+                                style={{ width: `${uploadProgress}%` }}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-1.5 py-1">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center group-hover:scale-110 transition-transform">
+                              <Upload className="w-5 h-5" />
+                            </div>
+                            <p className="text-xs font-semibold text-white">
+                              {profile.theme.backgroundImageUrl ? 'คลิกเพื่อเปลี่ยนรูปภาพ' : 'คลิกเพื่ออัปโหลดรูปภาพ / GIF'}
+                            </p>
+                            <p className="text-[11px] text-white/50">
+                              รองรับ .png, .jpg, .gif, .webp คุณภาพสูง
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Manual URL Input */}
+                      <div className="pt-1">
+                        <label className="block text-[11px] text-white/60 mb-1">หรือใส่ลิงก์ URL รูปภาพเอง:</label>
+                        <input
+                          type="text"
+                          value={profile.theme.backgroundImageUrl || ''}
+                          onChange={(e) =>
+                            setProfile({
+                              ...profile,
+                              theme: { ...profile.theme, backgroundImageUrl: e.target.value },
+                            })
+                          }
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white font-mono"
+                          placeholder="https://... (URL ของรูปภาพหรือ GIF)"
+                        />
+                      </div>
                     </div>
                   )}
 
                   {profile.theme.backgroundType === 'custom-video' && (
-                    <div>
-                      <label className="block text-xs font-semibold text-white/70 mb-1">
-                        Video URL (รองรับ YouTube หรือ ลิงก์ตรง .mp4)
-                      </label>
-                      <input
-                        type="text"
-                        value={profile.theme.backgroundVideoUrl || ''}
-                        onChange={(e) =>
-                          setProfile({
-                            ...profile,
-                            theme: { ...profile.theme, backgroundVideoUrl: e.target.value },
-                          })
-                        }
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white font-mono"
-                        placeholder="https://youtu.be/... หรือ https://.../video.mp4"
-                      />
-                      <div className="mt-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-200/90 leading-relaxed space-y-1">
-                        <p className="font-semibold text-emerald-300 flex items-center gap-1.5">
-                          <span>✨</span> แนะนำความคมชัดสูงสุด (Full HD 1080p / 4K):
-                        </p>
-                        <p>
-                          • <strong>YouTube:</strong> ระบบใช้ YouTube Engine บังคับความละเอียดสูงสุด 1080p HD และซ่อนปุ่มควบคุม/ปุ่มหยุดอัตโนมัติ
-                        </p>
-                        <p>
-                          • <strong>ไฟล์ .mp4 (แนะนำที่สุด):</strong> หากต้องการภาพคมชัดระดับ 1080p/4K 60fps แท้ 100% ไม่มีปุ่ม YouTube กวนใจ แนะนำใช้ลิงก์ตรง .mp4 (เช่น จาก Discord CDN, Catbox หรือเว็บฝากไฟล์)
-                        </p>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-semibold text-white/90">
+                          วิดีโอพื้นหลัง (Background Video)
+                        </label>
+                        {profile.theme.backgroundVideoUrl && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setProfile({
+                                ...profile,
+                                theme: { ...profile.theme, backgroundVideoUrl: '' },
+                              })
+                            }
+                            className="text-[11px] text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
+                          >
+                            <Trash2 className="w-3 h-3" /> ลบวิดีโอ
+                          </button>
+                        )}
                       </div>
+
+                      {/* Hidden File Input for Video */}
+                      <input
+                        type="file"
+                        ref={bgVideoInputRef}
+                        onChange={(e) => handleFileUpload(e, 'bgVideo')}
+                        accept="video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.webm,.mov"
+                        className="hidden"
+                      />
+
+                      {/* Upload Box / Dropzone */}
+                      <div
+                        onClick={() => !uploadingField && bgVideoInputRef.current?.click()}
+                        className={`relative group border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all ${
+                          uploadingField === 'bgVideo'
+                            ? 'border-emerald-500/50 bg-emerald-500/10'
+                            : 'border-white/15 hover:border-emerald-500/50 hover:bg-white/5'
+                        }`}
+                      >
+                        {uploadingField === 'bgVideo' ? (
+                          <div className="space-y-2 py-2">
+                            <div className="flex items-center justify-center gap-2 text-emerald-400 text-xs font-semibold">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span>กำลังอัปโหลดวิดีโอ... {uploadProgress}%</span>
+                            </div>
+                            <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+                              <div
+                                className="bg-emerald-500 h-full transition-all duration-300"
+                                style={{ width: `${uploadProgress}%` }}
+                              />
+                            </div>
+                            <p className="text-[11px] text-white/50">กรุณารอสักครู่ ระบบกำลังประมวลผลไฟล์วิดีโอ</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-1.5 py-1">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center group-hover:scale-110 transition-transform">
+                              <Upload className="w-5 h-5" />
+                            </div>
+                            <p className="text-xs font-semibold text-white">
+                              {profile.theme.backgroundVideoUrl ? 'คลิกเพื่อเปลี่ยนไฟล์วิดีโอ' : 'คลิกเพื่ออัปโหลดไฟล์วิดีโอ (.mp4, .webm)'}
+                            </p>
+                            <p className="text-[11px] text-emerald-400/90 font-medium">
+                              ✨ อัปโหลดแล้วเล่นเป็น HTML5 Video แท้ 1080p/4K ลื่นไหล 100% ไม่มีปุ่ม YouTube กวนใจแน่นอน
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Video Preview Card if set */}
+                      {profile.theme.backgroundVideoUrl && (
+                        <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                          <div className="flex items-center justify-between text-xs text-white/70">
+                            <span className="flex items-center gap-1.5 font-medium text-emerald-400">
+                              <Check className="w-3.5 h-3.5" /> วิดีโอที่กำลังใช้งาน:
+                            </span>
+                            <span className="text-[10px] font-mono text-white/40 truncate max-w-[200px]">
+                              {profile.theme.backgroundVideoUrl}
+                            </span>
+                          </div>
+                          {!getYouTubeVideoId(profile.theme.backgroundVideoUrl) && (
+                            <div className="w-full aspect-video rounded-lg overflow-hidden bg-black/60 relative">
+                              <video
+                                src={profile.theme.backgroundVideoUrl}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute top-2 right-2 px-2 py-0.5 rounded bg-emerald-500 text-black text-[10px] font-bold shadow-md">
+                                HTML5 VIDEO
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Manual URL Input */}
+                      <div className="pt-1">
+                        <label className="block text-[11px] text-white/60 mb-1">
+                          หรือใส่ลิงก์ URL วิดีโอตรง / ลิงก์ YouTube เอง:
+                        </label>
+                        <input
+                          type="text"
+                          value={profile.theme.backgroundVideoUrl || ''}
+                          onChange={(e) =>
+                            setProfile({
+                              ...profile,
+                              theme: { ...profile.theme, backgroundVideoUrl: e.target.value },
+                            })
+                          }
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white font-mono"
+                          placeholder="https://.../video.mp4 หรือ https://youtu.be/..."
+                        />
+                      </div>
+
+                      {uploadError && (
+                        <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl p-2.5">
+                          ⚠️ {uploadError}
+                        </p>
+                      )}
                     </div>
                   )}
 

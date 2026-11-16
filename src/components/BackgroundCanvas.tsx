@@ -33,6 +33,67 @@ interface Sakura {
   opacity: number;
 }
 
+function NativeVideoBackground({
+  videoUrl,
+  brightnessFactor,
+  overlayDarkness,
+  canvasRef,
+}: {
+  videoUrl: string;
+  brightnessFactor: number;
+  overlayDarkness: number;
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+}) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.muted = true;
+    video.defaultMuted = true;
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        const handleUserTouch = () => {
+          video.play().catch(() => {});
+          window.removeEventListener('click', handleUserTouch);
+          window.removeEventListener('touchstart', handleUserTouch);
+        };
+        window.addEventListener('click', handleUserTouch, { passive: true });
+        window.addEventListener('touchstart', handleUserTouch, { passive: true });
+      });
+    }
+  }, [videoUrl]);
+
+  return (
+    <div className="absolute inset-0 -z-0 overflow-hidden pointer-events-none bg-[#0a0b12]">
+      <video
+        ref={videoRef}
+        autoPlay
+        loop
+        muted
+        playsInline
+        onPlaying={() => setIsLoaded(true)}
+        onLoadedData={() => setIsLoaded(true)}
+        className={`w-full h-full object-cover transition-opacity duration-500 ${
+          isLoaded ? 'opacity-100' : 'opacity-0'
+        }`}
+        style={{ filter: `brightness(${brightnessFactor})` }}
+        src={videoUrl}
+      />
+      {overlayDarkness > 0 && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ backgroundColor: `rgba(0, 0, 0, ${overlayDarkness})` }}
+        />
+      )}
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-10" />
+    </div>
+  );
+}
+
 // Global singleton loader for YouTube IFrame API
 let apiLoadedPromise: Promise<void> | null = null;
 function ensureYouTubeApi(): Promise<void> {
@@ -504,24 +565,12 @@ export default function BackgroundCanvas({ theme }: Props) {
     }
 
     return (
-      <div className="absolute inset-0 -z-0 overflow-hidden pointer-events-none bg-black">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full h-full object-cover"
-          style={{ filter: `brightness(${brightnessFactor})` }}
-          src={theme.backgroundVideoUrl}
-        />
-        {overlayDarkness > 0 && (
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{ backgroundColor: `rgba(0, 0, 0, ${overlayDarkness})` }}
-          />
-        )}
-        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-10" />
-      </div>
+      <NativeVideoBackground
+        videoUrl={theme.backgroundVideoUrl}
+        brightnessFactor={brightnessFactor}
+        overlayDarkness={overlayDarkness}
+        canvasRef={canvasRef}
+      />
     );
   }
 
