@@ -184,8 +184,36 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
     if (!file) return;
 
     setUploadingField(field);
-    setUploadProgress(0);
+    setUploadProgress(10);
     setUploadError(null);
+
+    // Instant local preview for 0ms feedback!
+    try {
+      const previewUrl = URL.createObjectURL(file);
+      if (field === 'bgVideo') {
+        setProfile((prev) => ({
+          ...prev,
+          theme: {
+            ...prev.theme,
+            backgroundType: 'custom-video',
+            backgroundVideoUrl: previewUrl,
+          },
+        }));
+      } else if (field === 'bgImage') {
+        setProfile((prev) => ({
+          ...prev,
+          theme: {
+            ...prev.theme,
+            backgroundType: 'custom-image',
+            backgroundImageUrl: previewUrl,
+          },
+        }));
+      } else if (field === 'avatar') {
+        setProfile((prev) => ({ ...prev, avatarUrl: previewUrl }));
+      } else if (field === 'banner') {
+        setProfile((prev) => ({ ...prev, bannerUrl: previewUrl }));
+      }
+    } catch {}
 
     try {
       const res = await uploadMediaFile(file, (percent) => {
@@ -1100,6 +1128,95 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                   />
                 </div>
 
+                {/* 3. Background Video (.mp4) inside Profile Tab */}
+                <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-xs font-semibold text-white flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                        <span>วิดีโอพื้นหลัง (Background Video .mp4)</span>
+                      </label>
+                      <p className="text-[11px] text-white/50 mt-0.5">
+                        อัปโหลดคลิป .mp4 เล่นวนซ้ำ คมชัด 1080p แท้ 100% ไม่มีปุ่ม YouTube กวนใจ
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => !uploadingField && bgVideoInputRef.current?.click()}
+                        disabled={uploadingField === 'bgVideo'}
+                        className="text-[11px] text-emerald-300 font-semibold hover:text-emerald-200 flex items-center gap-1.5 transition-all px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.2)]"
+                      >
+                        {uploadingField === 'bgVideo' ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                            <span>กำลังอัปโหลด {uploadProgress}%</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>อัปโหลดวิดีโอ .mp4</span>
+                          </>
+                        )}
+                      </button>
+                      {profile.theme.backgroundVideoUrl && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setProfile({
+                              ...profile,
+                              theme: { ...profile.theme, backgroundVideoUrl: '' },
+                            })
+                          }
+                          className="text-[11px] text-red-400 hover:text-red-300 transition-colors px-2 py-1"
+                        >
+                          ลบวิดีโอ
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {profile.theme.backgroundVideoUrl && (
+                    <div className="flex items-center gap-2.5 p-2 rounded-lg bg-black/40 border border-white/10 text-xs">
+                      <div className="w-16 h-10 rounded overflow-hidden bg-black flex-shrink-0">
+                        <video
+                          src={profile.theme.backgroundVideoUrl}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+                          <Check className="w-3 h-3" /> กำลังใช้วิดีโอนี้เป็นพื้นหลัง
+                        </div>
+                        <div className="text-[10px] font-mono text-white/40 truncate">
+                          {profile.theme.backgroundVideoUrl}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <input
+                    type="text"
+                    value={profile.theme.backgroundVideoUrl || ''}
+                    onChange={(e) =>
+                      setProfile({
+                        ...profile,
+                        theme: {
+                          ...profile.theme,
+                          backgroundType: 'custom-video',
+                          backgroundVideoUrl: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                    placeholder="https://.../video.mp4 หรือ กดปุ่มอัปโหลดวิดีโอ .mp4 ด้านบน"
+                  />
+                </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-white/70 mb-1">Bio / Status Description</label>
                   <textarea
@@ -1647,23 +1764,45 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-white/70 mb-1.5">Background Effect (พื้นหลัง)</label>
-                    <select
-                      value={profile.theme.backgroundType}
-                      onChange={(e) =>
-                        setProfile({
-                          ...profile,
-                          theme: { ...profile.theme, backgroundType: e.target.value as ThemeConfig['backgroundType'] },
-                        })
-                      }
-                      className="w-full bg-white/5 border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                    >
-                      <option value="stars" className="bg-neutral-900">✨ Ambient Stars (ดวงดาวลอย)</option>
-                      <option value="particles" className="bg-neutral-900">🔮 Floating Particles (ละอองนีออน)</option>
-                      <option value="cyber-rain" className="bg-neutral-900">🌧️ Cyber Rain / Matrix (ฝนดิจิทัล)</option>
-                      <option value="custom-image" className="bg-neutral-900">🖼️ Custom Image / GIF (รูปหรือกิฟต์ส่วนตัว)</option>
-                      <option value="custom-video" className="bg-neutral-900">🎬 Custom Looping Video (วิดีโอ MP4 คลอ)</option>
-                    </select>
+                    <label className="block text-xs font-semibold text-white/70 mb-2">เลือกรูปแบบพื้นหลัง (Background Type)</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {[
+                        { id: 'stars', label: '✨ ดวงดาวลอย', desc: 'Ambient Stars' },
+                        { id: 'particles', label: '🔮 ละอองนีออน', desc: 'Floating Particles' },
+                        { id: 'cyber-rain', label: '🌧️ ฝนดิจิทัล', desc: 'Cyber Rain / Matrix' },
+                        { id: 'custom-image', label: '🖼️ รูปภาพ / GIF', desc: 'Custom Image / GIF' },
+                        { id: 'custom-video', label: '🎬 วิดีโอ MP4', desc: 'Full HD Video แท้', badge: 'แนะนำ' },
+                      ].map((item) => {
+                        const isSelected = profile.theme.backgroundType === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() =>
+                              setProfile({
+                                ...profile,
+                                theme: { ...profile.theme, backgroundType: item.id as ThemeConfig['backgroundType'] },
+                              })
+                            }
+                            className={`p-2.5 rounded-xl border text-left transition-all relative ${
+                              isSelected
+                                ? 'border-emerald-500 bg-emerald-500/15 text-white shadow-[0_0_15px_rgba(16,185,129,0.2)]'
+                                : 'border-white/10 bg-white/5 text-white/70 hover:border-white/20 hover:text-white'
+                            }`}
+                          >
+                            <div className="font-semibold text-xs flex items-center justify-between">
+                              <span>{item.label}</span>
+                              {item.badge && (
+                                <span className="px-1.5 py-0.5 rounded bg-emerald-500 text-black text-[9px] font-bold">
+                                  {item.badge}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[10px] text-white/40 mt-0.5">{item.desc}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {profile.theme.backgroundType === 'custom-image' && (
