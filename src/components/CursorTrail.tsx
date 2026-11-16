@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from 'react';
 
 interface Props {
   type?: 'none' | 'sparkles' | 'hearts' | 'bubbles' | 'stars' | 'smoke';
+  isPreview?: boolean;
 }
 
 interface Particle {
@@ -19,11 +20,12 @@ interface Particle {
   maxLife: number;
 }
 
-export default function CursorTrail({ type = 'none' }: Props) {
+export default function CursorTrail({ type = 'none', isPreview = false }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    if (!type || type === 'none') return;
+    // Disable in dashboard editor preview to prevent particles from polluting form inputs
+    if (isPreview || !type || type === 'none') return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -31,22 +33,37 @@ export default function CursorTrail({ type = 'none' }: Props) {
     if (!ctx) return;
 
     let animId: number;
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const handleResize = () => {
+    const updateSize = () => {
       if (!canvas) return;
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
-    window.addEventListener('resize', handleResize);
+    updateSize();
+
+    window.addEventListener('resize', updateSize);
 
     const particles: Particle[] = [];
+    let lastX = -999;
+    let lastY = -999;
+    let lastTime = 0;
 
     const handleMouseMove = (e: MouseEvent) => {
       const x = e.clientX;
       const y = e.clientY;
-      const count = type === 'smoke' ? 2 : 3;
+
+      // Ignore zero or out-of-bounds coords (prevents diagonal streaks from 0,0)
+      if (x <= 5 && y <= 5) return;
+
+      const now = Date.now();
+      const dist = Math.hypot(x - lastX, y - lastY);
+
+      // Require minimum movement to avoid particle clumps
+      if (dist < 12 && now - lastTime < 35) return;
+      lastX = x;
+      lastY = y;
+      lastTime = now;
+
+      const count = type === 'smoke' ? 1 : 2;
 
       for (let i = 0; i < count; i++) {
         let char = '';
@@ -69,21 +86,21 @@ export default function CursorTrail({ type = 'none' }: Props) {
         }
 
         particles.push({
-          x: x + (Math.random() - 0.5) * 8,
-          y: y + (Math.random() - 0.5) * 8,
-          vx: (Math.random() - 0.5) * 1.5,
-          vy: type === 'hearts' || type === 'bubbles' ? -Math.random() * 2 - 0.5 : (Math.random() - 0.5) * 1.5,
-          size: type === 'smoke' ? Math.random() * 12 + 8 : Math.random() * 12 + 10,
+          x: x + (Math.random() - 0.5) * 6,
+          y: y + (Math.random() - 0.5) * 6,
+          vx: (Math.random() - 0.5) * 1.2,
+          vy: type === 'hearts' || type === 'bubbles' ? -Math.random() * 1.5 - 0.5 : (Math.random() - 0.5) * 1.2,
+          size: type === 'smoke' ? Math.random() * 10 + 6 : Math.random() * 10 + 9,
           alpha: 1,
           color,
           char,
           life: 0,
-          maxLife: Math.random() * 25 + 25,
+          maxLife: Math.random() * 20 + 20,
         });
       }
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
     const render = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -123,18 +140,18 @@ export default function CursorTrail({ type = 'none' }: Props) {
     render();
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', updateSize);
       window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(animId);
     };
-  }, [type]);
+  }, [type, isPreview]);
 
-  if (!type || type === 'none') return null;
+  if (isPreview || !type || type === 'none') return null;
 
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-50 select-none"
+      className="absolute inset-0 pointer-events-none z-30 select-none overflow-hidden"
     />
   );
 }

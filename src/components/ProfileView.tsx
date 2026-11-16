@@ -532,8 +532,8 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
         </div>
       )}
 
-      {/* Interactive Cursor Trail Particles */}
-      <CursorTrail type={profile.theme.extraEffects?.cursorTrail} />
+      {/* Interactive Cursor Trail Particles (disabled in dashboard preview to keep editor clean) */}
+      <CursorTrail type={profile.theme.extraEffects?.cursorTrail} isPreview={isPreview} />
 
       {/* Main Profile Card Container */}
       <div

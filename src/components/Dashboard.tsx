@@ -187,33 +187,10 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
     setUploadProgress(10);
     setUploadError(null);
 
-    // Instant local preview for 0ms feedback!
-    try {
-      const previewUrl = URL.createObjectURL(file);
-      if (field === 'bgVideo') {
-        setProfile((prev) => ({
-          ...prev,
-          theme: {
-            ...prev.theme,
-            backgroundType: 'custom-video',
-            backgroundVideoUrl: previewUrl,
-          },
-        }));
-      } else if (field === 'bgImage') {
-        setProfile((prev) => ({
-          ...prev,
-          theme: {
-            ...prev.theme,
-            backgroundType: 'custom-image',
-            backgroundImageUrl: previewUrl,
-          },
-        }));
-      } else if (field === 'avatar') {
-        setProfile((prev) => ({ ...prev, avatarUrl: previewUrl }));
-      } else if (field === 'banner') {
-        setProfile((prev) => ({ ...prev, bannerUrl: previewUrl }));
-      }
-    } catch {}
+    const prevBgVideo = profile.theme.backgroundVideoUrl || '';
+    const prevBgImage = profile.theme.backgroundImageUrl || '';
+    const prevAvatar = profile.avatarUrl || '';
+    const prevBanner = profile.bannerUrl || '';
 
     try {
       const res = await uploadMediaFile(file, (percent) => {
@@ -253,6 +230,22 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
         }
       } else {
         setUploadError(res.error || 'การอัปโหลดไฟล์ล้มเหลว กรุณาลองใหม่อีกครั้ง');
+        // Restore previous valid URLs so broken blob strings never get saved
+        if (field === 'bgVideo') {
+          setProfile((prev) => ({
+            ...prev,
+            theme: { ...prev.theme, backgroundVideoUrl: prevBgVideo },
+          }));
+        } else if (field === 'bgImage') {
+          setProfile((prev) => ({
+            ...prev,
+            theme: { ...prev.theme, backgroundImageUrl: prevBgImage },
+          }));
+        } else if (field === 'avatar') {
+          setProfile((prev) => ({ ...prev, avatarUrl: prevAvatar }));
+        } else if (field === 'banner') {
+          setProfile((prev) => ({ ...prev, bannerUrl: prevBanner }));
+        }
       }
     } catch (err: any) {
       setUploadError(err.message || 'เกิดข้อผิดพลาดในการอัปโหลด');
@@ -286,11 +279,24 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
         if (data.authenticated && data.user) {
           setCurrentUser(data.user);
           if (data.profile) {
-            setProfile(data.profile);
-            setSelectedUsername(data.profile.username);
+            const cleanProf = { ...data.profile };
+            if (cleanProf.theme?.backgroundVideoUrl?.startsWith('blob:')) {
+              cleanProf.theme.backgroundVideoUrl = '';
+            }
+            if (cleanProf.theme?.backgroundImageUrl?.startsWith('blob:')) {
+              cleanProf.theme.backgroundImageUrl = '';
+            }
+            if (cleanProf.avatarUrl?.startsWith('blob:')) {
+              cleanProf.avatarUrl = '';
+            }
+            if (cleanProf.bannerUrl?.startsWith('blob:')) {
+              cleanProf.bannerUrl = '';
+            }
+            setProfile(cleanProf);
+            setSelectedUsername(cleanProf.username);
             try {
-              localStorage.setItem('stephod_profile_' + data.profile.username.toLowerCase(), JSON.stringify(data.profile));
-              document.cookie = `stephod_p_${data.profile.username.toLowerCase()}=${encodeURIComponent(JSON.stringify(data.profile))}; path=/; max-age=86400`;
+              localStorage.setItem('stephod_profile_' + cleanProf.username.toLowerCase(), JSON.stringify(cleanProf));
+              document.cookie = `stephod_p_${cleanProf.username.toLowerCase()}=${encodeURIComponent(JSON.stringify(cleanProf))}; path=/; max-age=86400`;
             } catch {}
           }
         }
@@ -391,13 +397,28 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
     const auto = isAuto === true;
     if (!auto) setSaving(true);
 
+    // Sanitize any dead blob: URLs before saving so DB never stores broken temporary blob links
+    const cleanTheme = { ...profile.theme };
+    if (cleanTheme.backgroundVideoUrl?.startsWith('blob:')) {
+      cleanTheme.backgroundVideoUrl = '';
+    }
+    if (cleanTheme.backgroundImageUrl?.startsWith('blob:')) {
+      cleanTheme.backgroundImageUrl = '';
+    }
+    const cleanProfileToSave = {
+      ...profile,
+      theme: cleanTheme,
+      avatarUrl: profile.avatarUrl?.startsWith('blob:') ? '' : profile.avatarUrl,
+      bannerUrl: profile.bannerUrl?.startsWith('blob:') ? '' : profile.bannerUrl,
+    };
+
     // ⚡ Optimistic Instant Broadcast (0ms cross-tab latency)
     try {
-      localStorage.setItem('stephod_profile_' + profile.username.toLowerCase(), JSON.stringify(profile));
+      localStorage.setItem('stephod_profile_' + cleanProfileToSave.username.toLowerCase(), JSON.stringify(cleanProfileToSave));
       localStorage.setItem('stephod_profile_sync', Date.now().toString());
-      document.cookie = `stephod_p_${profile.username.toLowerCase()}=${encodeURIComponent(JSON.stringify(profile))}; path=/; max-age=86400`;
+      document.cookie = `stephod_p_${cleanProfileToSave.username.toLowerCase()}=${encodeURIComponent(JSON.stringify(cleanProfileToSave))}; path=/; max-age=86400`;
       if (bcRef.current) {
-        bcRef.current.postMessage({ type: 'UPDATE_PROFILE', profile });
+        bcRef.current.postMessage({ type: 'UPDATE_PROFILE', profile: cleanProfileToSave });
       }
     } catch {}
 
@@ -405,7 +426,7 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
       const res = await fetch('/api/profiles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profile),
+        body: JSON.stringify(cleanProfileToSave),
       });
       const data = await res.json();
       if (data.success) {
@@ -2062,9 +2083,25 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
                               {profile.theme.backgroundVideoUrl}
                             </span>
                           </div>
+
+                          {/* Stale Blob warning */}
+                          {profile.theme.backgroundVideoUrl.startsWith('blob:') && (
+                            <div className="p-2.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs flex items-center justify-between gap-2">
+                              <span>⚠️ พบลิงก์ blob ชั่วคราวจากเซสชันเก่า ซึ่งหมดอายุแล้ว กรุณากดอัปโหลดใหม่เพื่อใช้งาน</span>
+                              <button
+                                type="button"
+                                onClick={() => setProfile((prev) => ({ ...prev, theme: { ...prev.theme, backgroundVideoUrl: '' } }))}
+                                className="px-2 py-0.5 rounded bg-amber-500/30 hover:bg-amber-500/50 text-amber-100 text-[11px] font-bold cursor-pointer whitespace-nowrap"
+                              >
+                                ล้างค่า
+                              </button>
+                            </div>
+                          )}
+
                           {!getYouTubeVideoId(profile.theme.backgroundVideoUrl) && (
                             <div className="w-full aspect-video rounded-lg overflow-hidden bg-black/60 relative">
                               <video
+                                key={profile.theme.backgroundVideoUrl}
                                 src={profile.theme.backgroundVideoUrl}
                                 autoPlay
                                 loop

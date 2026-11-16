@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -46,10 +47,13 @@ async function uploadToCatbox(buffer: Buffer, fileName: string, mimeType: string
     catboxForm.append('fileToUpload', blob, fileName);
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12000);
+    const timeout = setTimeout(() => controller.abort(), 20000);
 
     const res = await fetch('https://catbox.moe/user/api.php', {
       method: 'POST',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+      },
       body: catboxForm,
       signal: controller.signal,
     });
@@ -70,8 +74,74 @@ async function uploadToCatbox(buffer: Buffer, fileName: string, mimeType: string
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const file = formData.get('file') as File | null;
+    const isChunk = formData.has('chunkIndex');
 
+    if (isChunk) {
+      const chunk = formData.get('chunk') as File | null;
+      const chunkIndex = parseInt(formData.get('chunkIndex') as string, 10);
+      const totalChunks = parseInt(formData.get('totalChunks') as string, 10);
+      const uploadId = (formData.get('uploadId') as string) || 'temp';
+      const fileName = (formData.get('fileName') as string) || `video_${Date.now()}.mp4`;
+      const mimeType = (formData.get('mimeType') as string) || 'video/mp4';
+
+      if (!chunk) {
+        return NextResponse.json({ ok: false, error: 'Missing chunk payload' }, { status: 400 });
+      }
+
+      const tempDir = path.join(os.tmpdir(), `stephod_chunks_${uploadId}`);
+      if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+
+      const chunkBuffer = Buffer.from(await chunk.arrayBuffer());
+      fs.writeFileSync(path.join(tempDir, `part_${chunkIndex}`), chunkBuffer);
+
+      // Still receiving chunks: acknowledge success
+      if (chunkIndex < totalChunks - 1) {
+        return NextResponse.json({ ok: true, chunkReceived: chunkIndex });
+      }
+
+      // Final chunk arrived: assemble into single buffer
+      const chunkBuffers: Buffer[] = [];
+      for (let i = 0; i < totalChunks; i++) {
+        const partPath = path.join(tempDir, `part_${i}`);
+        if (!fs.existsSync(partPath)) {
+          return NextResponse.json({ ok: false, error: `Missing part ${i}` }, { status: 400 });
+        }
+        chunkBuffers.push(fs.readFileSync(partPath));
+      }
+      const fullBuffer = Buffer.concat(chunkBuffers);
+
+      // Clean up temp directory
+      try {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      } catch {}
+
+      // 1. If running locally, save to public/uploads
+      if (!process.env.VERCEL) {
+        try {
+          const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+          if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+          fs.writeFileSync(path.join(uploadsDir, fileName), fullBuffer);
+          return NextResponse.json({ ok: true, url: `/uploads/${fileName}` });
+        } catch {}
+      }
+
+      // 2. Cloud environment (Vercel): upload to permanent GitHub Release asset
+      const ghUrl = await uploadToGitHubRelease(fullBuffer, fileName, mimeType);
+      if (ghUrl) {
+        return NextResponse.json({ ok: true, url: ghUrl });
+      }
+
+      // 3. Fallback to Catbox
+      const cbUrl = await uploadToCatbox(fullBuffer, fileName, mimeType);
+      if (cbUrl) {
+        return NextResponse.json({ ok: true, url: cbUrl });
+      }
+
+      return NextResponse.json({ ok: false, error: 'ไม่สามารถบันทึกไฟล์วิดีโอไปยัง Cloud ได้' }, { status: 500 });
+    }
+
+    // Standard single-file upload (for files <= 3MB)
+    const file = formData.get('file') as File | null;
     if (!file) {
       return NextResponse.json({ ok: false, error: 'ไม่พบไฟล์ที่ต้องการอัปโหลด' }, { status: 400 });
     }

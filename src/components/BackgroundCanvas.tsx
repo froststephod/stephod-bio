@@ -46,8 +46,11 @@ function NativeVideoBackground({
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
+    setIsLoaded(false);
+    setHasError(false);
     const video = videoRef.current;
     if (!video) return;
 
@@ -67,6 +70,10 @@ function NativeVideoBackground({
     }
   }, [videoUrl]);
 
+  if (hasError) {
+    return null; // Gracefully fallback to canvas animation if video URL fails or is expired
+  }
+
   return (
     <div className="absolute inset-0 -z-0 overflow-hidden pointer-events-none bg-[#0a0b12]">
       <video
@@ -75,8 +82,10 @@ function NativeVideoBackground({
         loop
         muted
         playsInline
+        preload="auto"
         onPlaying={() => setIsLoaded(true)}
         onLoadedData={() => setIsLoaded(true)}
+        onError={() => setHasError(true)}
         className={`w-full h-full object-cover transition-opacity duration-500 ${
           isLoaded ? 'opacity-100' : 'opacity-0'
         }`}
