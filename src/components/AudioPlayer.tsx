@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Volume2, VolumeX, Play, Pause, Music, ExternalLink } from 'lucide-react';
 import { AudioConfig } from '@/types/profile';
 import { getYouTubeVideoId, getSpotifyInfo } from '@/lib/music';
@@ -16,55 +16,215 @@ export default function AudioPlayer({ audio, accentColor, hasEntered }: Props) {
   const [volume, setVolume] = useState(audio.volume || 60);
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [isClient, setIsClient] = useState(false);
+  const [origin, setOrigin] = useState('');
 
   const ytId = getYouTubeVideoId(audio.audioUrl);
   const spotifyInfo = getSpotifyInfo(audio.audioUrl);
 
+  const hasEnteredRef = useRef(hasEntered);
+  hasEnteredRef.current = hasEntered;
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
+  const isMutedRef = useRef(isMuted);
+  isMutedRef.current = isMuted;
+
+  useEffect(() => {
+    setIsClient(true);
+    if (typeof window !== 'undefined') {
+      setOrigin(window.location.origin);
+    }
+  }, []);
+
+  // Send postMessage command to YouTube iframe safely
+  const postYTCommand = useCallback((func: string, args: any[] = []) => {
+    try {
+      if (iframeRef.current?.contentWindow) {
+        iframeRef.current.contentWindow.postMessage(
+          JSON.stringify({
+            event: 'command',
+            func: func,
+            args: args,
+          }),
+          '*'
+        );
+      }
+    } catch (err) {
+      console.warn('YouTube postMessage error:', err);
+    }
+  }, []);
+
+  // Synchronous audio playback trigger
+  const triggerAudioPlayback = useCallback(() => {
+    if (!audio.enabled || !audio.audioUrl) return;
+
+    if (ytId) {
+      postYTCommand('playVideo');
+      postYTCommand('unMute');
+      postYTCommand('setVolume', [isMutedRef.current ? 0 : volumeRef.current]);
+      setIsPlaying(true);
+    } else if (!spotifyInfo && audioRef.current) {
+      audioRef.current.volume = (isMutedRef.current ? 0 : volumeRef.current) / 100;
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch((err) => {
+          console.warn('Audio play error:', err);
+        });
+    }
+  }, [audio.enabled, audio.audioUrl, ytId, spotifyInfo, postYTCommand]);
+
+  // Sync volume & mute to HTML audio and YouTube
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = (isMuted ? 0 : volume) / 100;
     }
-  }, [volume, isMuted]);
-
-  // When user clicks to enter, start audio (if standard audio or youtube)
-  useEffect(() => {
-    if (hasEntered && audio.enabled && audio.audioUrl) {
-      if (ytId) {
-        setIsPlaying(true);
-      } else if (!spotifyInfo && audioRef.current) {
-        audioRef.current.currentTime = 0;
-        audioRef.current
-          .play()
-          .then(() => setIsPlaying(true))
-          .catch((err) => {
-            console.warn('Autoplay prevented or audio source error:', err);
-            setIsPlaying(false);
-          });
+    if (ytId) {
+      if (isMuted) {
+        postYTCommand('mute');
+      } else {
+        postYTCommand('unMute');
+        postYTCommand('setVolume', [volume]);
       }
     }
-  }, [hasEntered, audio.enabled, audio.audioUrl, ytId, spotifyInfo]);
+  }, [volume, isMuted, ytId, postYTCommand]);
+
+  // When hasEntered becomes true, trigger playback immediately with sequential retries
+  useEffect(() => {
+    if (hasEntered && audio.enabled && audio.audioUrl) {
+      triggerAudioPlayback();
+
+      if (ytId) {
+        const t1 = setTimeout(() => triggerAudioPlayback(), 300);
+        const t2 = setTimeout(() => triggerAudioPlayback(), 700);
+        const t3 = setTimeout(() => triggerAudioPlayback(), 1500);
+        return () => {
+          clearTimeout(t1);
+          clearTimeout(t2);
+          clearTimeout(t3);
+        };
+      }
+    }
+  }, [hasEntered, audio.enabled, audio.audioUrl, ytId, triggerAudioPlayback]);
+
+  // Listen for custom event 'stephod_play_audio' dispatched on user enter / splash click
+  useEffect(() => {
+    const handleCustomPlay = () => {
+      triggerAudioPlayback();
+    };
+
+    window.addEventListener('stephod_play_audio', handleCustomPlay);
+    return () => window.removeEventListener('stephod_play_audio', handleCustomPlay);
+  }, [triggerAudioPlayback]);
+
+  // Global user interaction fallback:
+  // If browser Autoplay Policy delayed playback, the very first click/tap/touch/key anywhere begins playback instantly!
+  useEffect(() => {
+    if (!audio.enabled || !audio.audioUrl) return;
+
+    const handleUserInteraction = () => {
+      if (hasEnteredRef.current) {
+        triggerAudioPlayback();
+      }
+    };
+
+    window.addEventListener('click', handleUserInteraction, { once: true });
+    window.addEventListener('pointerdown', handleUserInteraction, { once: true });
+    window.addEventListener('touchstart', handleUserInteraction, { once: true });
+    window.addEventListener('keydown', handleUserInteraction, { once: true });
+
+    return () => {
+      window.removeEventListener('click', handleUserInteraction);
+      window.removeEventListener('pointerdown', handleUserInteraction);
+      window.removeEventListener('touchstart', handleUserInteraction);
+      window.removeEventListener('keydown', handleUserInteraction);
+    };
+  }, [audio.enabled, audio.audioUrl, triggerAudioPlayback]);
+
+  // Listen to YouTube Player messages (state changes, ready)
+  useEffect(() => {
+    if (!ytId) return;
+
+    const handleMessage = (e: MessageEvent) => {
+      try {
+        if (typeof e.data === 'string') {
+          const data = JSON.parse(e.data);
+          if (data.event === 'onReady' || data.event === 'initialDelivery') {
+            if (hasEnteredRef.current) {
+              triggerAudioPlayback();
+            }
+          } else if (data.event === 'onStateChange') {
+            if (data.info === 1) {
+              // 1 = PLAYING
+              setIsPlaying(true);
+            } else if (data.info === 2) {
+              // 2 = PAUSED
+              setIsPlaying(false);
+            } else if (data.info === 0) {
+              // 0 = ENDED -> loop video automatically
+              postYTCommand('playVideo');
+              setIsPlaying(true);
+            }
+          }
+        }
+      } catch {}
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [ytId, postYTCommand, triggerAudioPlayback]);
+
+  // Handle iframe load event
+  const handleIframeLoad = () => {
+    if (hasEnteredRef.current) {
+      triggerAudioPlayback();
+      setTimeout(triggerAudioPlayback, 400);
+      setTimeout(triggerAudioPlayback, 1000);
+    }
+  };
 
   const togglePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (spotifyInfo) return;
+
     if (ytId) {
-      setIsPlaying(!isPlaying);
+      if (isPlaying) {
+        postYTCommand('pauseVideo');
+        setIsPlaying(false);
+      } else {
+        triggerAudioPlayback();
+      }
       return;
     }
-    if (spotifyInfo) {
-      return;
-    }
+
     if (!audioRef.current) return;
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
-      audioRef.current.play().then(() => setIsPlaying(true)).catch(console.error);
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(console.error);
     }
   };
 
   const toggleMute = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsMuted(!isMuted);
+    const nextMuted = !isMuted;
+    setIsMuted(nextMuted);
+
+    if (ytId) {
+      if (nextMuted) {
+        postYTCommand('mute');
+      } else {
+        postYTCommand('unMute');
+        postYTCommand('setVolume', [volume]);
+      }
+    } else if (audioRef.current) {
+      audioRef.current.volume = nextMuted ? 0 : volume / 100;
+    }
   };
 
   if (!audio.enabled || !audio.audioUrl) {
@@ -113,9 +273,13 @@ export default function AudioPlayer({ audio, accentColor, hasEntered }: Props) {
     );
   }
 
+  const ytEmbedUrl = ytId && isClient
+    ? `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=0&controls=0&playsinline=1&loop=1&playlist=${ytId}&enablejsapi=1&origin=${encodeURIComponent(origin)}`
+    : '';
+
   return (
     <>
-      {/* If standard audio file */}
+      {/* Standard audio file */}
       {!ytId && (
         <audio
           ref={audioRef}
@@ -126,15 +290,31 @@ export default function AudioPlayer({ audio, accentColor, hasEntered }: Props) {
         />
       )}
 
-      {/* If YouTube audio stream */}
-      {ytId && hasEntered && isPlaying && (
-        <div className="hidden pointer-events-none">
+      {/* YouTube audio iframe - rendered offscreen without display:none so browser audio engine never culls it */}
+      {ytId && isClient && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'fixed',
+            top: -9999,
+            left: -9999,
+            width: '240px',
+            height: '240px',
+            opacity: 0.001,
+            pointerEvents: 'none',
+            zIndex: -9999,
+            overflow: 'hidden',
+          }}
+        >
           <iframe
-            width="1"
-            height="1"
-            src={`https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=${isMuted ? 1 : 0}&loop=1&playlist=${ytId}&enablejsapi=1`}
-            allow="autoplay"
+            ref={iframeRef}
+            id="stephod-youtube-audio"
+            width="240"
+            height="240"
+            src={ytEmbedUrl}
+            allow="autoplay; encrypted-media; picture-in-picture"
             title="Audio Stream"
+            onLoad={handleIframeLoad}
           />
         </div>
       )}
@@ -186,20 +366,25 @@ export default function AudioPlayer({ audio, accentColor, hasEntered }: Props) {
             >
               {isMuted ? <VolumeX className="w-3.5 h-3.5 text-red-400" /> : <Volume2 className="w-3.5 h-3.5" />}
             </button>
-            {!ytId && (
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={isMuted ? 0 : volume}
-                onChange={(e) => {
-                  setVolume(Number(e.target.value));
-                  if (isMuted) setIsMuted(false);
-                }}
-                className="w-14 h-1 accent-purple-400 bg-white/20 rounded-lg hidden sm:block cursor-pointer"
-                title="Volume"
-              />
-            )}
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={isMuted ? 0 : volume}
+              onChange={(e) => {
+                const newVol = Number(e.target.value);
+                setVolume(newVol);
+                if (isMuted) setIsMuted(false);
+                if (ytId) {
+                  postYTCommand('unMute');
+                  postYTCommand('setVolume', [newVol]);
+                } else if (audioRef.current) {
+                  audioRef.current.volume = newVol / 100;
+                }
+              }}
+              className="w-14 h-1 accent-emerald-400 bg-white/20 rounded-lg hidden sm:block cursor-pointer"
+              title="Volume"
+            />
           </div>
         </div>
       </div>

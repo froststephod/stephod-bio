@@ -125,6 +125,9 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
   useEffect(() => {
     const handleGlobalKey = () => {
       setHasEntered(true);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('stephod_play_audio'));
+      }
     };
     window.addEventListener('keydown', handleGlobalKey);
     return () => window.removeEventListener('keydown', handleGlobalKey);
@@ -286,6 +289,9 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
 
   const handleEnter = () => {
     setHasEntered(true);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('stephod_play_audio'));
+    }
   };
 
   const handleLike = async (e: React.MouseEvent) => {
@@ -453,7 +459,12 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
   return (
     <div
       onClick={() => {
-        if (!hasEntered) setHasEntered(true);
+        if (!hasEntered) {
+          setHasEntered(true);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('stephod_play_audio'));
+          }
+        }
       }}
       className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 overflow-hidden selection:bg-emerald-500/30 selection:text-white"
       style={{
