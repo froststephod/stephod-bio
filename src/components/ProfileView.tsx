@@ -290,9 +290,19 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
   ]);
 
   const handleEnter = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        if (ctx.state === 'suspended') {
+          ctx.resume().catch(() => {});
+        }
+      }
+    } catch {}
     setHasEntered(true);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('stephod_play_audio'));
+      window.dispatchEvent(new CustomEvent('stephod_play_video'));
     }
   };
 
@@ -481,29 +491,26 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
 
   return (
     <div
+      onClick={() => {
+        if (!hasEntered) {
+          handleEnter();
+        } else if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('stephod_play_audio'));
+          window.dispatchEvent(new CustomEvent('stephod_play_video'));
+        }
+      }}
       onTouchStart={() => {
         if (!hasEntered) {
-          setHasEntered(true);
-        }
-        if (typeof window !== 'undefined') {
+          handleEnter();
+        } else if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('stephod_play_audio'));
           window.dispatchEvent(new CustomEvent('stephod_play_video'));
         }
       }}
       onPointerDown={() => {
         if (!hasEntered) {
-          setHasEntered(true);
-        }
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('stephod_play_audio'));
-          window.dispatchEvent(new CustomEvent('stephod_play_video'));
-        }
-      }}
-      onClick={() => {
-        if (!hasEntered) {
-          setHasEntered(true);
-        }
-        if (typeof window !== 'undefined') {
+          handleEnter();
+        } else if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('stephod_play_audio'));
           window.dispatchEvent(new CustomEvent('stephod_play_video'));
         }
@@ -531,6 +538,8 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
       {!hasEntered && isClickToEnterEnabled && (
         <div
           onClick={handleEnter}
+          onTouchStart={handleEnter}
+          onPointerDown={handleEnter}
           className={`${isPreview ? 'absolute' : 'fixed'} inset-0 z-[60] flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl cursor-pointer transition-opacity duration-700 animate-in fade-in`}
         >
           <div className="relative group text-center p-8">

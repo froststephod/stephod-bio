@@ -11,7 +11,7 @@ interface Props {
   hasEntered?: boolean;
 }
 
-export default function AudioPlayer({ audio, accentColor }: Props) {
+export default function AudioPlayer({ audio, accentColor, hasEntered }: Props) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(audio.volume || 60);
   const [isMuted, setIsMuted] = useState(false);
@@ -119,6 +119,21 @@ export default function AudioPlayer({ audio, accentColor }: Props) {
     window.addEventListener('stephod_play_audio', handleCustomPlay);
     return () => window.removeEventListener('stephod_play_audio', handleCustomPlay);
   }, [triggerAudioPlayback]);
+
+  // When hasEntered becomes true (e.g. user tapped click-to-enter or entered profile), trigger immediate unmuted playback
+  useEffect(() => {
+    if (hasEntered) {
+      triggerAudioPlayback();
+      const t1 = setTimeout(() => triggerAudioPlayback(), 200);
+      const t2 = setTimeout(() => triggerAudioPlayback(), 600);
+      const t3 = setTimeout(() => triggerAudioPlayback(), 1200);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
+    }
+  }, [hasEntered, triggerAudioPlayback]);
 
   // Global user interaction fallback:
   // If browser Autoplay Policy delayed sound, the very first micro-touch or scroll unmutes/plays instantly!
@@ -291,7 +306,7 @@ export default function AudioPlayer({ audio, accentColor }: Props) {
   }
 
   const ytEmbedUrl = ytId && isClient
-    ? `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=0&playsinline=1&loop=1&playlist=${ytId}&enablejsapi=1&origin=${encodeURIComponent(origin)}`
+    ? `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=0&controls=0&playsinline=1&loop=1&playlist=${ytId}&enablejsapi=1&origin=${encodeURIComponent(origin)}`
     : '';
 
   return (
@@ -308,17 +323,17 @@ export default function AudioPlayer({ audio, accentColor }: Props) {
         />
       )}
 
-      {/* YouTube audio iframe - rendered inside viewport so Android Chrome compositor never pauses or throttles it */}
+      {/* YouTube audio iframe - rendered with standard dimensions behind content so Chromium never treats it as 0px hidden element */}
       {ytId && isClient && (
         <div
           aria-hidden="true"
           style={{
             position: 'fixed',
-            bottom: '0px',
-            right: '0px',
-            width: '1px',
-            height: '1px',
-            opacity: 0.001,
+            bottom: '-40px',
+            right: '-40px',
+            width: '240px',
+            height: '240px',
+            opacity: 0.005,
             pointerEvents: 'none',
             zIndex: -50,
             overflow: 'hidden',
@@ -327,10 +342,10 @@ export default function AudioPlayer({ audio, accentColor }: Props) {
           <iframe
             ref={iframeRef}
             id="stephod-youtube-audio"
-            width="1"
-            height="1"
+            width="240"
+            height="240"
             src={ytEmbedUrl}
-            allow="autoplay *; encrypted-media *; picture-in-picture *"
+            allow="autoplay *; encrypted-media *; picture-in-picture *; clipboard-write *"
             title="Audio Stream"
             onLoad={handleIframeLoad}
           />
