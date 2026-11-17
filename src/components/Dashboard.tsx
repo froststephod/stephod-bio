@@ -1010,7 +1010,7 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
         {activeTab !== 'overview' && activeTab !== 'shop' && activeTab !== 'settings' && (
           <div className="flex-1 flex flex-col lg:flex-row overflow-hidden h-[calc(100vh-64px)]">
             {/* Left Side: Form Controls */}
-            <div className="w-full lg:w-[480px] xl:w-[540px] border-r border-white/10 flex flex-col bg-[#0f1018] overflow-y-auto max-h-full">
+            <div className="w-full lg:w-[480px] xl:w-[540px] border-r border-white/10 flex flex-col bg-[#0f1018] overflow-y-auto max-h-full relative z-20 flex-shrink-0">
               {/* Tab Contents */}
               <div className="p-5 space-y-6">
             {/* 1. Profile Tab (yura.lol Style) */}
@@ -3027,7 +3027,7 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
         </div>
 
         {/* Right Side: Real-Time Live Preview Pane */}
-        <div className="flex-1 bg-[#07080c] relative flex flex-col items-center justify-center p-4 md:p-8 overflow-hidden min-h-[500px]">
+        <div className="flex-1 bg-[#07080c] relative flex flex-col items-center justify-center p-4 md:p-8 overflow-hidden min-h-[500px] isolate transform-gpu z-10">
           {/* Preview Toolbar */}
           <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-30 pointer-events-none">
             <div className="pointer-events-auto flex items-center gap-1.5 bg-black/60 border border-white/10 px-3 py-1.5 rounded-full backdrop-blur-md">
@@ -3059,7 +3059,7 @@ export default function Dashboard({ initialProfiles }: { initialProfiles: Record
 
           {/* Preview Frame Container */}
           <div
-            className={`transition-all duration-300 w-full flex items-center justify-center overflow-auto h-full ${
+            className={`transition-all duration-300 w-full flex items-center justify-center overflow-auto h-full relative isolate transform-gpu ${
               previewDevice === 'mobile'
                 ? 'max-w-[390px] h-[780px] border-[6px] border-neutral-800 rounded-[44px] shadow-2xl relative overflow-hidden bg-black'
                 : 'max-w-full'

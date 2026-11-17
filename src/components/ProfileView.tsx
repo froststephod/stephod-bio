@@ -524,14 +524,14 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
 
       {/* Page Overlays (Scanlines, VHS, Grid, Vignette) */}
       {profile.theme.extraEffects?.pageOverlay && profile.theme.extraEffects.pageOverlay !== 'none' && (
-        <div className={`fixed inset-0 pointer-events-none z-10 overlay-${profile.theme.extraEffects.pageOverlay}`} />
+        <div className={`${isPreview ? 'absolute' : 'fixed'} inset-0 pointer-events-none z-10 overlay-${profile.theme.extraEffects.pageOverlay}`} />
       )}
 
       {/* Click To Enter Splash Screen */}
       {!hasEntered && isClickToEnterEnabled && (
         <div
           onClick={handleEnter}
-          className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl cursor-pointer transition-opacity duration-700 animate-in fade-in"
+          className={`${isPreview ? 'absolute' : 'fixed'} inset-0 z-[60] flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl cursor-pointer transition-opacity duration-700 animate-in fade-in`}
         >
           <div className="relative group text-center p-8">
             <div

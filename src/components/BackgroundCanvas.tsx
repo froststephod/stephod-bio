@@ -100,7 +100,7 @@ function NativeVideoBackground({
   }, [videoUrl, videoSrc]);
 
   return (
-    <div className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none z-0 bg-[#07080e]">
+    <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0 bg-[#07080e]">
       {/* 
         Instant 0ms Backdrop:
         High-speed poster frame + subtle cosmic gradient so screen is NEVER a cold empty pitch-black void!
