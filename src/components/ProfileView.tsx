@@ -520,7 +520,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
       )}
 
       {/* Background Layer */}
-      <BackgroundCanvas theme={profile.theme} />
+      <BackgroundCanvas theme={profile.theme} isPreview={isPreview} />
 
       {/* Page Overlays (Scanlines, VHS, Grid, Vignette) */}
       {profile.theme.extraEffects?.pageOverlay && profile.theme.extraEffects.pageOverlay !== 'none' && (

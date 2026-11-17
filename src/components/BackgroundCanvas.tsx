@@ -5,6 +5,7 @@ import { ThemeConfig } from '@/types/profile';
 
 interface Props {
   theme: ThemeConfig;
+  isPreview?: boolean;
 }
 
 function getYouTubeVideoId(url?: string): string | null {
@@ -38,11 +39,13 @@ function NativeVideoBackground({
   brightnessFactor,
   overlayDarkness,
   canvasRef,
+  isPreview,
 }: {
   videoUrl: string;
   brightnessFactor: number;
   overlayDarkness: number;
   canvasRef: React.RefObject<HTMLCanvasElement>;
+  isPreview?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -72,7 +75,7 @@ function NativeVideoBackground({
         videoRef.current.muted = true;
         const p = videoRef.current.play();
         if (p !== undefined) {
-          p.then(() => setIsPlaying(true)).catch(() => {});
+          p.catch(() => {});
         }
       }
     };
@@ -99,8 +102,12 @@ function NativeVideoBackground({
     };
   }, [videoUrl, videoSrc]);
 
+  const containerClass = isPreview
+    ? 'absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0 bg-[#07080e]'
+    : 'fixed inset-0 w-full h-[100dvh] overflow-hidden pointer-events-none z-0 bg-[#07080e]';
+
   return (
-    <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0 bg-[#07080e]">
+    <div className={containerClass}>
       {/* 
         Instant 0ms Backdrop:
         High-speed poster frame + subtle cosmic gradient so screen is NEVER a cold empty pitch-black void!
@@ -112,20 +119,24 @@ function NativeVideoBackground({
         }}
       />
 
-      {/* Poster Image Layer: visible immediately, smoothly cross-fades when video starts */}
+      {/* 
+        Poster Image Layer:
+        Preloaded and ALWAYS visible underneath the video.
+        When video has not yet decoded frames or is buffering, poster is 100% visible immediately.
+        When video starts playing, video layers seamlessly on top without any black gaps or flash!
+      */}
       {posterPath && (
         <img
           src={posterPath}
           alt=""
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-opacity duration-700"
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
           style={{
             filter: `brightness(${brightnessFactor})`,
-            opacity: isPlaying ? 0 : 1,
           }}
         />
       )}
 
-      {/* Video Element: stays transparent while buffering, fades in when playing */}
+      {/* Video Element: stays transparent while buffering, fades in smoothly when playing */}
       <video
         ref={(el) => {
           if (el) {
@@ -135,7 +146,7 @@ function NativeVideoBackground({
             el.setAttribute('playsinline', '');
             el.setAttribute('webkit-playsinline', 'true');
             if (el.paused) {
-              el.play().then(() => setIsPlaying(true)).catch(() => {});
+              el.play().catch(() => {});
             }
           }
           videoRef.current = el;
@@ -149,18 +160,22 @@ function NativeVideoBackground({
         webkit-playsinline="true"
         preload="auto"
         onPlaying={() => setIsPlaying(true)}
-        onLoadedData={() => setIsPlaying(true)}
+        onTimeUpdate={(e) => {
+          if (e.currentTarget.currentTime > 0 && !isPlaying) {
+            setIsPlaying(true);
+          }
+        }}
         onError={() => {
           const video = videoRef.current;
           if (video && video.src !== videoUrl) {
             video.src = videoUrl;
             try {
               video.load();
-              video.play().then(() => setIsPlaying(true)).catch(() => {});
+              video.play().catch(() => {});
             } catch {}
           }
         }}
-        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
           isPlaying ? 'opacity-100' : 'opacity-0'
         }`}
         style={{ filter: `brightness(${brightnessFactor})` }}
@@ -234,11 +249,13 @@ function YouTubeBackground({
   brightnessFactor,
   overlayDarkness,
   canvasRef,
+  isPreview,
 }: {
   ytId: string;
   brightnessFactor: number;
   overlayDarkness: number;
   canvasRef: React.RefObject<HTMLCanvasElement>;
+  isPreview?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<any>(null);
@@ -389,8 +406,12 @@ function YouTubeBackground({
     };
   }, [ytId]);
 
+  const containerClass = isPreview
+    ? 'absolute inset-0 -z-0 overflow-hidden pointer-events-none bg-[#0a0b12]'
+    : 'fixed inset-0 w-full h-[100dvh] -z-0 overflow-hidden pointer-events-none bg-[#0a0b12]';
+
   return (
-    <div className="absolute inset-0 -z-0 overflow-hidden pointer-events-none bg-[#0a0b12]">
+    <div className={containerClass}>
       {/* 
         Container with 16:9 ratio, oversized by 1.35x and centered with absolute translate:
         All YouTube titles, watermarks, and progress controls are completely cropped outside the viewport.
@@ -428,7 +449,7 @@ function YouTubeBackground({
   );
 }
 
-export default function BackgroundCanvas({ theme }: Props) {
+export default function BackgroundCanvas({ theme, isPreview }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const bgEffect = theme.extraEffects?.bgEffect || 'none';
 
@@ -649,6 +670,7 @@ export default function BackgroundCanvas({ theme }: Props) {
           brightnessFactor={brightnessFactor}
           overlayDarkness={overlayDarkness}
           canvasRef={canvasRef}
+          isPreview={isPreview}
         />
       );
     }
@@ -659,15 +681,20 @@ export default function BackgroundCanvas({ theme }: Props) {
         brightnessFactor={brightnessFactor}
         overlayDarkness={overlayDarkness}
         canvasRef={canvasRef}
+        isPreview={isPreview}
       />
     );
   }
+
+  const containerClass = isPreview
+    ? 'absolute inset-0'
+    : 'fixed inset-0 w-full h-[100dvh]';
 
   // Handle Custom Image
   if (theme.backgroundType === 'custom-image' && theme.backgroundImageUrl) {
     return (
       <div
-        className="absolute inset-0 -z-0 bg-cover bg-center bg-no-repeat pointer-events-none"
+        className={`${containerClass} -z-0 bg-cover bg-center bg-no-repeat pointer-events-none`}
         style={{
           backgroundImage: `url(${theme.backgroundImageUrl})`,
           filter: `brightness(${brightnessFactor})`,
@@ -686,7 +713,7 @@ export default function BackgroundCanvas({ theme }: Props) {
 
   return (
     <div
-      className="absolute inset-0 -z-0 pointer-events-none overflow-hidden"
+      className={`${containerClass} -z-0 pointer-events-none overflow-hidden`}
       style={{
         background: `radial-gradient(circle at 50% 25%, ${theme.accentColor || '#10b981'}15 0%, rgba(18, 22, 34, 0.75) 45%, #0a0b12 100%)`,
         filter: `brightness(${brightnessFactor})`,
