@@ -484,9 +484,10 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
       onClick={() => {
         if (!hasEntered) {
           setHasEntered(true);
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('stephod_play_audio'));
-          }
+        }
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('stephod_play_audio'));
+          window.dispatchEvent(new CustomEvent('stephod_play_video'));
         }
       }}
       className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 overflow-hidden selection:bg-emerald-500/30 selection:text-white"
@@ -636,7 +637,7 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
 
           {/* 1. LAYOUT: CENTER (Standard Classic Aesthetic) */}
           {layout === 'center' && (
-            <div className={`p-6 sm:p-7 text-center ${hasBanner && !isTransparent ? '-mt-14' : 'pt-7'}`}>
+            <div className={`p-4 sm:p-7 text-center ${hasBanner && !isTransparent ? '-mt-14' : 'pt-7'}`}>
               {/* Avatar with Discord Decoration Frame */}
               <div className="relative inline-block mx-auto mb-3">
                 <AvatarWithDecoration
@@ -783,59 +784,71 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
               {/* Audio Visualizer (Extra Effect) */}
               {renderAudioVisualizer()}
 
-              {/* Social Links (Adaptive Flex on mobile: fits in one horizontal row, centered) */}
-              {profile.socialLinks && profile.socialLinks.length > 0 && (
-                <div className="mt-5 flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 max-w-full">
-                  {profile.socialLinks.map((link) => {
-                    const color = getSocialPlatformColor(link.platform, link.label, link.color);
-                    return (
-                      <a
-                        key={link.id}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          borderColor: isGlowIcons ? `${color}80` : 'rgba(255, 255, 255, 0.1)',
-                          boxShadow: isGlowIcons
-                            ? `0 0 16px ${color}45, 0 0 32px ${color}20, inset 0 0 10px ${color}20`
-                            : undefined,
-                        }}
-                        className={`group relative flex items-center justify-center sm:justify-start gap-2 p-2 sm:p-2.5 px-3 sm:px-3.5 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 flex-1 min-w-[90px] max-w-[150px] sm:max-w-none sm:min-w-[110px] ${
-                          isGlowIcons
-                            ? 'hover:scale-[1.03] bg-black/60 backdrop-blur-md hover:bg-black/80 hover:shadow-[0_0_26px_rgba(255,255,255,0.4),0_0_40px_currentColor]'
-                            : 'bg-black/50 backdrop-blur-md hover:bg-black/70 hover:border-white/20'
-                        }`}
-                      >
-                        {isGlowIcons && (
-                          <div
-                            className="absolute inset-0 rounded-xl opacity-15 group-hover:opacity-30 transition-opacity duration-300 pointer-events-none"
-                            style={{ backgroundColor: color }}
-                          />
-                        )}
-                        <div
-                          className="relative flex items-center justify-center transition-transform duration-200 group-hover:scale-125 flex-shrink-0"
+              {/* Social Links (Guaranteed single horizontal row on mobile for up to 3 links) */}
+              {profile.socialLinks && profile.socialLinks.length > 0 && (() => {
+                const count = profile.socialLinks.length;
+                const gridClass =
+                  count === 1
+                    ? 'grid-cols-1 max-w-[200px] mx-auto'
+                    : count === 2
+                    ? 'grid-cols-2 max-w-[320px] mx-auto'
+                    : count === 3
+                    ? 'grid-cols-3 w-full'
+                    : 'grid-cols-2 sm:grid-cols-4 w-full';
+
+                return (
+                  <div className={`mt-5 grid ${gridClass} gap-1.5 sm:gap-2.5 w-full`}>
+                    {profile.socialLinks.map((link) => {
+                      const color = getSocialPlatformColor(link.platform, link.label, link.color);
+                      return (
+                        <a
+                          key={link.id}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           style={{
-                            color: color,
-                            filter: isGlowIcons
-                              ? `drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 6px ${color}) drop-shadow(0 0 14px ${color}) drop-shadow(0 0 22px ${color})`
+                            borderColor: isGlowIcons ? `${color}80` : 'rgba(255, 255, 255, 0.1)',
+                            boxShadow: isGlowIcons
+                              ? `0 0 16px ${color}45, 0 0 32px ${color}20, inset 0 0 10px ${color}20`
                               : undefined,
                           }}
+                          className={`group relative flex items-center justify-center gap-1.5 sm:gap-2 p-1.5 sm:p-2.5 px-2 sm:px-3.5 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 min-w-0 w-full overflow-hidden ${
+                            isGlowIcons
+                              ? 'hover:scale-[1.03] bg-black/60 backdrop-blur-md hover:bg-black/80 hover:shadow-[0_0_26px_rgba(255,255,255,0.4),0_0_40px_currentColor]'
+                              : 'bg-black/50 backdrop-blur-md hover:bg-black/70 hover:border-white/20'
+                          }`}
                         >
-                          <SocialIcon platform={link.platform} color={color} className="w-4 h-4" />
-                        </div>
-                        <span
-                          className="text-xs font-semibold text-white group-hover:text-white truncate transition-all"
-                          style={{
-                            textShadow: isGlowIcons ? `0 0 8px ${color}90, 0 0 16px ${color}50` : undefined,
-                          }}
-                        >
-                          {link.label}
-                        </span>
-                      </a>
-                    );
-                  })}
-                </div>
-              )}
+                          {isGlowIcons && (
+                            <div
+                              className="absolute inset-0 rounded-xl opacity-15 group-hover:opacity-30 transition-opacity duration-300 pointer-events-none"
+                              style={{ backgroundColor: color }}
+                            />
+                          )}
+                          <div
+                            className="relative flex items-center justify-center transition-transform duration-200 group-hover:scale-125 flex-shrink-0"
+                            style={{
+                              color: color,
+                              filter: isGlowIcons
+                                ? `drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 6px ${color}) drop-shadow(0 0 14px ${color}) drop-shadow(0 0 22px ${color})`
+                                : undefined,
+                            }}
+                          >
+                            <SocialIcon platform={link.platform} color={color} className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                          </div>
+                          <span
+                            className="text-[11px] sm:text-xs font-semibold text-white group-hover:text-white truncate transition-all tracking-tight"
+                            style={{
+                              textShadow: isGlowIcons ? `0 0 8px ${color}90, 0 0 16px ${color}50` : undefined,
+                            }}
+                          >
+                            {link.label}
+                          </span>
+                        </a>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
 
               {/* Profile Footer Stats: Views & Likes & Live Viewers */}
               <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between text-xs font-mono">

@@ -45,14 +45,15 @@ function NativeVideoBackground({
   canvasRef: React.RefObject<HTMLCanvasElement>;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [hasError, setHasError] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // Fast inline streaming endpoint for mobile Android / iOS compatibility
   const isRemoteAsset = videoUrl.startsWith('http') && (videoUrl.includes('github') || videoUrl.includes('release'));
   const streamUrl = isRemoteAsset ? `/api/video-stream?url=${encodeURIComponent(videoUrl)}` : videoUrl;
+  const isCurrentVideo = videoUrl.includes('1794846484227_37bqqi') || videoUrl.includes('stephod');
+  const posterPath = isCurrentVideo ? '/video-poster.jpg' : undefined;
 
   useEffect(() => {
-    setHasError(false);
     const video = videoRef.current;
     if (!video) return;
 
@@ -63,37 +64,61 @@ function NativeVideoBackground({
     video.setAttribute('playsinline', '');
     video.setAttribute('webkit-playsinline', 'true');
 
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(() => {
-        const handleUserTouch = () => {
-          if (videoRef.current) {
-            videoRef.current.muted = true;
-            videoRef.current.play().catch(() => {});
-          }
-          window.removeEventListener('click', handleUserTouch);
-          window.removeEventListener('touchstart', handleUserTouch);
-        };
-        window.addEventListener('click', handleUserTouch, { passive: true });
-        window.addEventListener('touchstart', handleUserTouch, { passive: true });
-      });
-    }
-  }, [videoUrl]);
+    try {
+      video.load();
+    } catch {}
 
-  if (hasError) {
-    return null; // Gracefully fallback to canvas animation if video URL fails or is expired
-  }
+    const tryStartPlay = () => {
+      if (videoRef.current) {
+        videoRef.current.muted = true;
+        const p = videoRef.current.play();
+        if (p !== undefined) {
+          p.then(() => setIsPlaying(true)).catch(() => {});
+        }
+      }
+    };
+
+    tryStartPlay();
+
+    // High reliability mobile touch / gesture triggers
+    window.addEventListener('touchstart', tryStartPlay, { passive: true, once: true });
+    window.addEventListener('pointerdown', tryStartPlay, { passive: true, once: true });
+    window.addEventListener('scroll', tryStartPlay, { passive: true, once: true });
+    window.addEventListener('click', tryStartPlay, { passive: true, once: true });
+
+    const handleCustomPlay = () => tryStartPlay();
+    window.addEventListener('stephod_play_video', handleCustomPlay);
+    window.addEventListener('stephod_play_audio', handleCustomPlay);
+
+    return () => {
+      window.removeEventListener('touchstart', tryStartPlay);
+      window.removeEventListener('pointerdown', tryStartPlay);
+      window.removeEventListener('scroll', tryStartPlay);
+      window.removeEventListener('click', tryStartPlay);
+      window.removeEventListener('stephod_play_video', handleCustomPlay);
+      window.removeEventListener('stephod_play_audio', handleCustomPlay);
+    };
+  }, [videoUrl, streamUrl]);
 
   return (
     <div className="absolute inset-0 -z-0 overflow-hidden pointer-events-none bg-[#0a0b12]">
       {/* 
-        Instant Ambient Backdrop (0ms):
-        Sleek dark midnight gradient so screen is NEVER a cold empty pitch-black void while video frames decode!
+        Instant 0ms Backdrop:
+        High-speed poster frame + subtle cosmic gradient so screen is NEVER a cold empty pitch-black void!
       */}
+      {posterPath && (
+        <div
+          className="absolute inset-0 pointer-events-none bg-cover bg-center transition-opacity duration-700"
+          style={{
+            backgroundImage: `url('${posterPath}')`,
+            filter: `brightness(${brightnessFactor})`,
+          }}
+        />
+      )}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(circle at 50% 35%, #181c30 0%, #0d0f1c 55%, #05060c 100%)',
+          background: 'radial-gradient(circle at 50% 35%, rgba(24, 28, 48, 0.45) 0%, rgba(13, 15, 28, 0.65) 55%, rgba(5, 6, 12, 0.9) 100%)',
         }}
       />
 
@@ -106,17 +131,30 @@ function NativeVideoBackground({
             el.setAttribute('playsinline', '');
             el.setAttribute('webkit-playsinline', 'true');
             if (el.paused) {
-              el.play().catch(() => {});
+              el.play().then(() => setIsPlaying(true)).catch(() => {});
             }
           }
           videoRef.current = el;
         }}
+        src={streamUrl}
+        poster={posterPath}
         autoPlay
         loop
         muted
         playsInline
         preload="auto"
-        onError={() => setHasError(true)}
+        onPlaying={() => setIsPlaying(true)}
+        onError={() => {
+          // If streamUrl proxy encounters any hiccup, switch directly to upstream videoUrl
+          const video = videoRef.current;
+          if (video && video.src !== videoUrl) {
+            video.src = videoUrl;
+            try {
+              video.load();
+              video.play().then(() => setIsPlaying(true)).catch(() => {});
+            } catch {}
+          }
+        }}
         className="w-full h-full object-cover transition-opacity duration-300 opacity-100"
         style={{ filter: `brightness(${brightnessFactor})` }}
       >
