@@ -481,6 +481,24 @@ export default function ProfileView({ profile: initialProfile, isPreview = false
 
   return (
     <div
+      onTouchStart={() => {
+        if (!hasEntered) {
+          setHasEntered(true);
+        }
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('stephod_play_audio'));
+          window.dispatchEvent(new CustomEvent('stephod_play_video'));
+        }
+      }}
+      onPointerDown={() => {
+        if (!hasEntered) {
+          setHasEntered(true);
+        }
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('stephod_play_audio'));
+          window.dispatchEvent(new CustomEvent('stephod_play_video'));
+        }
+      }}
       onClick={() => {
         if (!hasEntered) {
           setHasEntered(true);

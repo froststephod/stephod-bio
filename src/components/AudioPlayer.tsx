@@ -121,22 +121,33 @@ export default function AudioPlayer({ audio, accentColor }: Props) {
   }, [triggerAudioPlayback]);
 
   // Global user interaction fallback:
-  // If browser Autoplay Policy delayed sound, the very first micro-movement (mousemove, scroll, touch, or click) unmutes/plays instantly!
+  // If browser Autoplay Policy delayed sound, the very first micro-touch or scroll unmutes/plays instantly!
   useEffect(() => {
     if (!audio.enabled || !audio.audioUrl) return;
 
     const handleUserInteraction = () => {
+      try {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioCtx) {
+          const ctx = new AudioCtx();
+          if (ctx.state === 'suspended') {
+            ctx.resume().catch(() => {});
+          }
+        }
+      } catch {}
+
       triggerAudioPlayback();
     };
 
-    window.addEventListener('mousemove', handleUserInteraction, { once: true, passive: true });
-    window.addEventListener('pointermove', handleUserInteraction, { once: true, passive: true });
-    window.addEventListener('scroll', handleUserInteraction, { once: true, passive: true });
-    window.addEventListener('wheel', handleUserInteraction, { once: true, passive: true });
-    window.addEventListener('pointerdown', handleUserInteraction, { once: true });
-    window.addEventListener('touchstart', handleUserInteraction, { once: true, passive: true });
-    window.addEventListener('click', handleUserInteraction, { once: true });
-    window.addEventListener('keydown', handleUserInteraction, { once: true });
+    window.addEventListener('mousemove', handleUserInteraction, { passive: true });
+    window.addEventListener('pointermove', handleUserInteraction, { passive: true });
+    window.addEventListener('scroll', handleUserInteraction, { passive: true });
+    window.addEventListener('wheel', handleUserInteraction, { passive: true });
+    window.addEventListener('pointerdown', handleUserInteraction);
+    window.addEventListener('touchstart', handleUserInteraction, { passive: true });
+    window.addEventListener('touchend', handleUserInteraction, { passive: true });
+    window.addEventListener('click', handleUserInteraction);
+    window.addEventListener('keydown', handleUserInteraction);
 
     return () => {
       window.removeEventListener('mousemove', handleUserInteraction);
@@ -145,6 +156,7 @@ export default function AudioPlayer({ audio, accentColor }: Props) {
       window.removeEventListener('wheel', handleUserInteraction);
       window.removeEventListener('pointerdown', handleUserInteraction);
       window.removeEventListener('touchstart', handleUserInteraction);
+      window.removeEventListener('touchend', handleUserInteraction);
       window.removeEventListener('click', handleUserInteraction);
       window.removeEventListener('keydown', handleUserInteraction);
     };
@@ -279,7 +291,7 @@ export default function AudioPlayer({ audio, accentColor }: Props) {
   }
 
   const ytEmbedUrl = ytId && isClient
-    ? `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=0&controls=0&playsinline=1&loop=1&playlist=${ytId}&enablejsapi=1&origin=${encodeURIComponent(origin)}`
+    ? `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=0&playsinline=1&loop=1&playlist=${ytId}&enablejsapi=1&origin=${encodeURIComponent(origin)}`
     : '';
 
   return (
@@ -296,29 +308,29 @@ export default function AudioPlayer({ audio, accentColor }: Props) {
         />
       )}
 
-      {/* YouTube audio iframe - rendered offscreen without display:none so browser audio engine never culls it */}
+      {/* YouTube audio iframe - rendered inside viewport so Android Chrome compositor never pauses or throttles it */}
       {ytId && isClient && (
         <div
           aria-hidden="true"
           style={{
             position: 'fixed',
-            top: -9999,
-            left: -9999,
-            width: '240px',
-            height: '240px',
+            bottom: '0px',
+            right: '0px',
+            width: '1px',
+            height: '1px',
             opacity: 0.001,
             pointerEvents: 'none',
-            zIndex: -9999,
+            zIndex: -50,
             overflow: 'hidden',
           }}
         >
           <iframe
             ref={iframeRef}
             id="stephod-youtube-audio"
-            width="240"
-            height="240"
+            width="1"
+            height="1"
             src={ytEmbedUrl}
-            allow="autoplay; encrypted-media; picture-in-picture"
+            allow="autoplay *; encrypted-media *; picture-in-picture *"
             title="Audio Stream"
             onLoad={handleIframeLoad}
           />

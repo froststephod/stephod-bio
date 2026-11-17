@@ -48,9 +48,8 @@ function NativeVideoBackground({
   const [isPlaying, setIsPlaying] = useState(false);
 
   // Fast inline streaming endpoint for mobile Android / iOS compatibility
-  const isRemoteAsset = videoUrl.startsWith('http') && (videoUrl.includes('github') || videoUrl.includes('release'));
-  const streamUrl = isRemoteAsset ? `/api/video-stream?url=${encodeURIComponent(videoUrl)}` : videoUrl;
   const isCurrentVideo = videoUrl.includes('1794846484227_37bqqi') || videoUrl.includes('stephod');
+  const videoSrc = isCurrentVideo ? '/background.mp4' : videoUrl;
   const posterPath = isCurrentVideo ? '/video-poster.jpg' : undefined;
 
   useEffect(() => {
@@ -98,30 +97,35 @@ function NativeVideoBackground({
       window.removeEventListener('stephod_play_video', handleCustomPlay);
       window.removeEventListener('stephod_play_audio', handleCustomPlay);
     };
-  }, [videoUrl, streamUrl]);
+  }, [videoUrl, videoSrc]);
 
   return (
-    <div className="absolute inset-0 -z-0 overflow-hidden pointer-events-none bg-[#0a0b12]">
+    <div className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none z-0 bg-[#07080e]">
       {/* 
         Instant 0ms Backdrop:
         High-speed poster frame + subtle cosmic gradient so screen is NEVER a cold empty pitch-black void!
       */}
-      {posterPath && (
-        <div
-          className="absolute inset-0 pointer-events-none bg-cover bg-center transition-opacity duration-700"
-          style={{
-            backgroundImage: `url('${posterPath}')`,
-            filter: `brightness(${brightnessFactor})`,
-          }}
-        />
-      )}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 w-full h-full pointer-events-none"
         style={{
-          background: 'radial-gradient(circle at 50% 35%, rgba(24, 28, 48, 0.45) 0%, rgba(13, 15, 28, 0.65) 55%, rgba(5, 6, 12, 0.9) 100%)',
+          background: 'radial-gradient(circle at 50% 35%, #1e2238 0%, #0d0f1c 55%, #07080e 100%)',
         }}
       />
 
+      {/* Poster Image Layer: visible immediately, smoothly cross-fades when video starts */}
+      {posterPath && (
+        <img
+          src={posterPath}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-opacity duration-700"
+          style={{
+            filter: `brightness(${brightnessFactor})`,
+            opacity: isPlaying ? 0 : 1,
+          }}
+        />
+      )}
+
+      {/* Video Element: stays transparent while buffering, fades in when playing */}
       <video
         ref={(el) => {
           if (el) {
@@ -136,16 +140,17 @@ function NativeVideoBackground({
           }
           videoRef.current = el;
         }}
-        src={streamUrl}
+        src={videoSrc}
         poster={posterPath}
         autoPlay
         loop
         muted
         playsInline
+        webkit-playsinline="true"
         preload="auto"
         onPlaying={() => setIsPlaying(true)}
+        onLoadedData={() => setIsPlaying(true)}
         onError={() => {
-          // If streamUrl proxy encounters any hiccup, switch directly to upstream videoUrl
           const video = videoRef.current;
           if (video && video.src !== videoUrl) {
             video.src = videoUrl;
@@ -155,16 +160,18 @@ function NativeVideoBackground({
             } catch {}
           }
         }}
-        className="w-full h-full object-cover transition-opacity duration-300 opacity-100"
+        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+          isPlaying ? 'opacity-100' : 'opacity-0'
+        }`}
         style={{ filter: `brightness(${brightnessFactor})` }}
       >
-        <source src={streamUrl} type="video/mp4" />
+        <source src={videoSrc} type="video/mp4" />
         <source src={videoUrl} type="video/mp4" />
       </video>
 
       {overlayDarkness > 0 && (
         <div
-          className="absolute inset-0 pointer-events-none"
+          className="absolute inset-0 w-full h-full pointer-events-none"
           style={{ backgroundColor: `rgba(0, 0, 0, ${overlayDarkness})` }}
         />
       )}
