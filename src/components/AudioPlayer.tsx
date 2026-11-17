@@ -329,8 +329,8 @@ export default function AudioPlayer({ audio, accentColor, hasEntered }: Props) {
           aria-hidden="true"
           style={{
             position: 'fixed',
-            bottom: '-40px',
-            right: '-40px',
+            bottom: '-120px',
+            right: '-120px',
             width: '240px',
             height: '240px',
             opacity: 0.005,
@@ -347,6 +347,7 @@ export default function AudioPlayer({ audio, accentColor, hasEntered }: Props) {
             src={ytEmbedUrl}
             allow="autoplay *; encrypted-media *; picture-in-picture *; clipboard-write *"
             title="Audio Stream"
+            style={{ pointerEvents: 'none' }}
             onLoad={handleIframeLoad}
           />
         </div>
